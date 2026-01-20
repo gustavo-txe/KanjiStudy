@@ -1,9 +1,10 @@
-package com.app.kanjistudy
+package com.app.kanjistudy.di
 
 import android.content.Context
 import androidx.room.Room
-import com.app.kanjistudy.room.AppDatabase
-import com.app.kanjistudy.room.KanjiDao
+import com.app.kanjistudy.data.remote.KanjiApiService
+import com.app.kanjistudy.data.local.AppDatabase
+import com.app.kanjistudy.data.local.KanjiDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
