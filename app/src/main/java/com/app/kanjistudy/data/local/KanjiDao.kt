@@ -16,9 +16,6 @@ interface KanjiDao {
     @Query("SELECT COUNT(*) FROM kanji_table")
     suspend fun countKanjis(): Int
 
-    @Query("SELECT * FROM kanji_table WHERE kanji = :kanji")
-    suspend fun getKanji(kanji: String): KanjiData?
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(kanjis: List<KanjiData>)
 

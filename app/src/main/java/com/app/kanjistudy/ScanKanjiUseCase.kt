@@ -35,4 +35,5 @@ class ScanKanjiUseCase @Inject constructor(
         lastUpdateTime = now
         return kanjisOnly
     }
+
 }

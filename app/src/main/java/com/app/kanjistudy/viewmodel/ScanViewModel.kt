@@ -16,15 +16,15 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ScanViewModel @Inject constructor(private val scanKanjiUseCase: ScanKanjiUseCase) : ViewModel() {
+class ScanViewModel @Inject constructor(
+    private val scanKanjiUseCase: ScanKanjiUseCase
+) : ViewModel() {
 
-    private var _uiState = MutableStateFlow(ScanUiState())
-    val uiState : StateFlow<ScanUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ScanUiState())
+    val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
     fun togglePause() {
-        _uiState.update {
-            it.copy(isPaused = !it.isPaused)
-        }
+        _uiState.update { it.copy(isPaused = !it.isPaused) }
     }
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -50,13 +50,10 @@ class ScanViewModel @Inject constructor(private val scanKanjiUseCase: ScanKanjiU
                 _uiState.update {
                     it.copy(kanji = newKanji)
                 }
-            } catch (e: Exception) {
-                // opcional: log
+            } catch (_: Exception) {
             } finally {
-                imageProxy.close() // ✅ AGORA É SEGURO
+                imageProxy.close()
             }
         }
     }
-
-
 }
