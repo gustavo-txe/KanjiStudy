@@ -25,6 +25,9 @@ interface KanjiDao {
     @Query("UPDATE kanji_table SET isLearned = 0 WHERE kanji = :kanji")
     suspend fun uncheckLearnedKanji(kanji: String) : Int
 
+    @Query("SELECT isLearned FROM kanji_table WHERE kanji = :kanji LIMIT 1")
+    suspend fun isKanjiLearned(kanji: String): Boolean
+
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
      fun getLearnedKanjis(): Flow<List<KanjiData>>
 

@@ -2,119 +2,155 @@ package com.app.kanjistudy.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.kanjistudy.KanjiDialog
 import com.app.kanjistudy.KanjiUiState
+import com.app.kanjistudy.KanjiUiEvent
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class KanjiViewModel @Inject constructor(private val repository: KanjiRepository) : ViewModel() {
+class KanjiViewModel @Inject constructor(
+    private val repository: KanjiRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(KanjiUiState())
     val uiState: StateFlow<KanjiUiState> = _uiState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<KanjiUiEvent>()
+    val uiEvent: SharedFlow<KanjiUiEvent?> = _uiEvent.asSharedFlow()
+
+    val learnedKanjis: StateFlow<List<KanjiData>> = repository.getLearnedKanjis()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
     init {
-        fetchAndStoreAllKanjis()
+        loadKanjis()
     }
 
-     fun markLearnedKanji(kanji: String){
-        viewModelScope.launch(Dispatchers.IO) {
-            val allKanjis = repository.getAllLocalKanjis()
-
-            when(allKanjis.find { it.kanji == kanji }!!.isLearned){
-                true -> repository.uncheckLearnedKanji(kanji)
-                false -> repository.markAsLearned(kanji)
-            }
+    fun markLearnedKanji(kanji: String) {
+        viewModelScope.launch {
+            repository.toggleLearnedKanji(kanji)
         }
-
     }
 
-    fun fetchAndStoreAllKanjis() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val existingCount = repository.countKanjis()
+    private fun loadKanjis() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
 
-            if (existingCount >= 2140) {
-                val localData = repository.getAllLocalKanjis()
-                updateLocalMaps(localData)
+            try {
+                val localData = repository.ensureAllKanjisLoaded(
+                    onProgress = { progress ->
+                        _uiState.update { it.copy(loadingProgress = progress) }
+                    }
+                )
+                updateMaps(localData)
 
-                _uiState.value = _uiState.value.copy(
-                    joyoKanjis = localData.map { it.kanji })
-
-                withContext(Dispatchers.Main) {
-
-                    _uiState.value = _uiState.value.copy(
+                _uiState.update {
+                    it.copy(
+                        joyoKanjis = localData.map { it.kanji },
                         isLoading = false,
-                        loadingProgress = 1f
+                        loadingProgress = 1f,
+                        filteredKanjis = localData.map { it.kanji }
                     )
                 }
-                return@launch
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Erro ao carregar kanjis") }
             }
 
-            val joyoKanjis = repository.getJoyoKanjis()
-            _uiState.value = _uiState.value.copy(
-                joyoKanjis = joyoKanjis
+        }
+    }
+
+    private fun updateMaps(data: List<KanjiData>) {
+        _uiState.update {
+            it.copy(
+                kunReadings = data.associate { it.kanji to it.kunReadings },
+                onReadings = data.associate { it.kanji to it.onReadings },
+                meanings = data.associate { it.kanji to it.meanings }
             )
+        }
+    }
 
-            val total = joyoKanjis.size
-            var processed = 0
+    fun onQueryChange(query: String) {
+        _uiState.update { state ->
+            state.copy(
+                query = query,
+                filteredKanjis = filterKanjis(query, state)
+            )
+        }
+    }
 
-            joyoKanjis.chunked(40).forEach { chunk ->
-                val kanjiDataList = chunk
-                    .map { kanji ->
-                        async {
-                            try {
-                                repository.getReadingMeaning(kanji)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }
-                    }.awaitAll().filterNotNull()
+    private fun filterKanjis(
+        query: String,
+        state: KanjiUiState
+    ): List<String> {
 
-                repository.insertAllKanjis(kanjiDataList)
+        val lowerQuery = query.trim().lowercase()
 
-                val localData = repository.getAllLocalKanjis()
-                updateLocalMaps(localData)
-
-                processed += chunk.size
-                _uiState.value = _uiState.value.copy(
-                    loadingProgress = processed.toFloat() / total
-                )
-
-                withContext(Dispatchers.Main) {
-                    if (localData.size == 2140) {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            loadingProgress = 1f
-                        )
-                    }
-                }
-            }
+        if (lowerQuery.isBlank()) {
+            return state.joyoKanjis
         }
 
+        return state.joyoKanjis.filter { kanji ->
+            val kun = state.kunReadings[kanji]
+                ?.joinToString(" ")
+                ?.lowercase()
+                .orEmpty()
+
+            val on = state.onReadings[kanji]
+                ?.joinToString(" ")
+                ?.lowercase()
+                .orEmpty()
+
+            val mean = state.meanings[kanji]
+                ?.joinToString(" ")
+                ?.lowercase()
+                .orEmpty()
+
+            kanji.contains(lowerQuery) ||
+                    kun.contains(lowerQuery) ||
+                    on.contains(lowerQuery) ||
+                    mean.contains(lowerQuery)
+        }
     }
 
-    private fun updateLocalMaps(localData: List<KanjiData>) {
-        val kunMap = localData.associate { it.kanji to it.kunReadings }
-        val onMap = localData.associate { it.kanji to it.onReadings }
-        val meaningsMap = localData.associate { it.kanji to it.meanings }
-
-        _uiState.value = _uiState.value.copy(
-            kunReadings = kunMap.toMap(),
-            onReadings = onMap.toMap(),
-            meanings = meaningsMap.toMap()
-        )
+    fun addLearnedKanji(kanji: String, isLearned: Boolean) {
+        viewModelScope.launch {
+            _uiEvent.emit(
+                KanjiUiEvent.ShowDialog(
+                    KanjiDialog.ToggleLearned(
+                        kanji = kanji,
+                        isLearned = isLearned
+                    )
+                )
+            )
+        }
     }
 
-
+    fun openGoogleSearch(kanji: String) {
+        viewModelScope.launch {
+            _uiEvent.emit(
+                KanjiUiEvent.ShowDialog(
+                    KanjiDialog.Google(kanji)
+                )
+            )
+        }
+    }
 
 
 }
