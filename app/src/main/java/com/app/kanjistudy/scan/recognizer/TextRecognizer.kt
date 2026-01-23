@@ -1,4 +1,4 @@
-package com.app.kanjistudy
+package com.app.kanjistudy.scan.recognizer
 
 import com.google.mlkit.vision.common.InputImage
 

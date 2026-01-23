@@ -1,12 +1,12 @@
-package com.app.kanjistudy.ui.home
+package com.app.kanjistudy.home.main
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.app.kanjistudy.ui.navigation.AppNavigation
-import com.app.kanjistudy.ui.theme.KanjiStudyTheme
+import com.app.kanjistudy.navigation.AppNavigation
+import com.app.kanjistudy.theme.KanjiStudyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -24,20 +24,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

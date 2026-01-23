@@ -1,5 +1,6 @@
-package com.app.kanjistudy
+package com.app.kanjistudy.scan.mlkit
 
+import com.app.kanjistudy.scan.recognizer.TextRecognizer
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions

@@ -1,12 +1,10 @@
-package com.app.kanjistudy.viewmodel
+package com.app.kanjistudy.scan
 
 import android.annotation.SuppressLint
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.kanjistudy.ScanKanjiUseCase
-import com.app.kanjistudy.ScanUiEvent
-import com.app.kanjistudy.ScanUiState
+import com.app.kanjistudy.scan.usecase.ScanKanjiUseCase
 import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,7 +33,10 @@ class ScanViewModel @Inject constructor(
 
     @SuppressLint("UnsafeOptInUsageError")
     fun onFrame(imageProxy: ImageProxy) {
-        if (_uiState.value.isPaused) return
+        if (_uiState.value.isPaused) {
+            imageProxy.close()
+            return
+        }
         val mediaImage = imageProxy.image ?: run {
             imageProxy.close()
             return
@@ -50,7 +51,6 @@ class ScanViewModel @Inject constructor(
             try {
                 val newKanji = scanKanjiUseCase.analyze(
                     image = image,
-                    isPaused = _uiState.value.isPaused,
                     lastRecognizedKanji = _uiState.value.kanji
                 ) ?: return@launch
 

@@ -1,7 +1,6 @@
-package com.app.kanjistudy.di
+package com.app.kanjistudy.scan.recognizer
 
-import com.app.kanjistudy.MlKitJapaneseTextRecognizer
-import com.app.kanjistudy.TextRecognizer
+import com.app.kanjistudy.scan.mlkit.MlKitJapaneseTextRecognizer
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

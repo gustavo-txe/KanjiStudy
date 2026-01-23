@@ -1,0 +1,287 @@
+package com.app.kanjistudy.scan
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.kanjistudy.usecase.CustomTab
+import com.app.kanjistudy.R
+import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
+
+@SuppressLint("ContextCastToActivity")
+@Composable
+fun ScanScreen(viewModel: ScanViewModel = hiltViewModel()) {
+    CameraPermission {
+        CameraScreen(viewModel)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun CameraScreen(viewModel: ScanViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val customTab = remember { CustomTab() }
+
+    val clipboardManager = LocalClipboardManager.current
+
+    val context = LocalContext.current
+
+    var dialogKanji by remember { mutableStateOf<Char?>(null) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is ScanUiEvent.ShowGoogleDialog -> dialogKanji = event.kanji
+
+                is ScanUiEvent.CopyKanji -> {
+                    clipboardManager.setText(
+                        AnnotatedString(event.kanji.toString())
+                    )
+                    Toast.makeText(
+                        context,
+                        "Kanji copied!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        CameraPreview(viewModel = viewModel)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+            ) {
+                Text(
+                    text = "Click on a kanji for more details",
+                    modifier = Modifier.padding(top = 16.dp),
+                    style = TextStyle(fontSize = 20.sp)
+                )
+
+                Text(
+                    text = "  Pause the camera for review",
+                    modifier = Modifier.padding(top = 5.dp),
+                    style = TextStyle(fontSize = 20.sp)
+                )
+            }
+
+        }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(450.dp)
+                .align(Alignment.Center),
+        ) {
+            items(uiState.kanji.toList()) { char ->
+                Text(
+                    text = char.toString(),
+                    modifier = Modifier
+                        .padding(2.dp)
+                        .combinedClickable(
+                            onClick = {
+                                viewModel.onKanjiClick(char)
+                            },
+                            onLongClick = {
+                                viewModel.onKanjiLongClick(char)
+                            }
+
+                        )
+                        .fillMaxWidth(),
+                    fontSize = 50.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        FloatingActionButton(
+            onClick = { viewModel.togglePause() },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(32.dp)
+        ) {
+
+            Icon(
+                painter = if (uiState.isPaused) painterResource(id = R.drawable.baseline_play_arrow_24)
+                else painterResource(id = R.drawable.baseline_pause_24),
+                contentDescription = if (uiState.isPaused) "Resume" else "Pause"
+            )
+
+        }
+    }
+
+    dialogKanji?.let { kanji ->
+        AlertDialog(
+            onDismissRequest = { dialogKanji = null },
+            title = { Text("Open Google?") },
+            text = {
+                Text("Would you like to search for $kanji on Google?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    customTab.openCustomTab(
+                        context,
+                        "https://www.google.com/search?q=kanji+$kanji"
+                    )
+                    dialogKanji = null
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    dialogKanji = null
+                }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun CameraPreview(
+    viewModel: ScanViewModel
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { ctx ->
+            val previewView = PreviewView(ctx).apply {
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
+
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+
+            cameraProviderFuture.addListener({
+
+                val cameraProvider = cameraProviderFuture.get()
+
+                val preview = Preview.Builder().build().also {
+                    it.surfaceProvider = previewView.surfaceProvider
+                }
+
+                val imageAnalysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .also { analysis ->
+                        analysis.setAnalyzer(
+                            ContextCompat.getMainExecutor(ctx),
+                            KanjiAnalyzer { image ->
+                                viewModel.onFrame(image)
+                            }
+                        )
+                    }
+
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageAnalysis
+                    )
+                } catch (exc: Exception) {
+                    Log.e("CameraX", "Use case binding failed", exc)
+                }
+
+            }, ContextCompat.getMainExecutor(ctx))
+
+            previewView
+        }
+    )
+}
+
+
+@Composable
+fun CameraPermission(
+    onPermissionGranted: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+
+    var permissionGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        permissionGranted = isGranted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!permissionGranted) {
+            launcher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    if (permissionGranted) {
+        onPermissionGranted()
+    } else {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Waiting for permission...")
+        }
+    }
+}

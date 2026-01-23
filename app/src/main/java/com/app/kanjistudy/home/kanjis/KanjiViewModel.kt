@@ -1,10 +1,7 @@
-package com.app.kanjistudy.viewmodel
+package com.app.kanjistudy.home.kanjis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.kanjistudy.KanjiDialog
-import com.app.kanjistudy.KanjiUiState
-import com.app.kanjistudy.KanjiUiEvent
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +31,7 @@ class KanjiViewModel @Inject constructor(
     val learnedKanjis: StateFlow<List<KanjiData>> = repository.getLearnedKanjis()
         .stateIn(
             viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
+            SharingStarted.Companion.WhileSubscribed(5000),
             emptyList()
         )
 

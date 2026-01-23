@@ -1,4 +1,4 @@
-package com.app.kanjistudy.ui.navigation
+package com.app.kanjistudy.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera

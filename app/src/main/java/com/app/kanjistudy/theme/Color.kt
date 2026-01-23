@@ -1,4 +1,4 @@
-package com.app.kanjistudy.ui.theme
+package com.app.kanjistudy.theme
 
 import androidx.compose.ui.graphics.Color
 

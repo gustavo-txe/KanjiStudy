@@ -1,4 +1,4 @@
-package com.app.kanjistudy.ui.scanner.analyzer
+package com.app.kanjistudy.scan.analyzer
 
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy

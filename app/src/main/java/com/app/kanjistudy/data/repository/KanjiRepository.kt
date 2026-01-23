@@ -1,10 +1,8 @@
 package com.app.kanjistudy.data.repository
 
-import android.content.Context
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.local.KanjiDao
 import com.app.kanjistudy.data.remote.KanjiApiService
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -16,9 +14,7 @@ import javax.inject.Inject
 class KanjiRepository @Inject constructor(
     private val kanjiDao: KanjiDao,
     private val api: KanjiApiService,
-    @ApplicationContext private val context: Context
 ) {
-
     suspend fun ensureAllKanjisLoaded(
         onProgress: (Float) -> Unit
     ): List<KanjiData> = withContext(Dispatchers.IO) {
@@ -56,36 +52,6 @@ class KanjiRepository @Inject constructor(
         else kanjiDao.markAsLearned(kanji)
     }
 
-
-    suspend fun getJoyoKanjis(): List<String> {
-        return api.getJoyoKanjis()
-    }
-
-    suspend fun getReadingMeaning(kanji: String): KanjiData {
-        return api.getReadingMeaning(kanji)
-    }
-
-    suspend fun insertAllKanjis(kanjiList: List<KanjiData>) {
-        kanjiDao.insertAll(kanjiList)
-    }
-
-    suspend fun getAllLocalKanjis(): List<KanjiData> {
-        return kanjiDao.getAllKanjis()
-    }
-
     fun getLearnedKanjis(): Flow<List<KanjiData>> = kanjiDao.getLearnedKanjis()
-
-    suspend fun markAsLearned(kanji: String) {
-        kanjiDao.markAsLearned(kanji)
-    }
-
-    suspend fun uncheckLearnedKanji(kanji: String) {
-        kanjiDao.uncheckLearnedKanji(kanji)
-    }
-
-    suspend fun countKanjis(): Int {
-        return kanjiDao.countKanjis()
-    }
-
 
 }

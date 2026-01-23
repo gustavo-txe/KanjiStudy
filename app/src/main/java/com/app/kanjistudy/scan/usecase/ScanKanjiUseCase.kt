@@ -1,5 +1,6 @@
-package com.app.kanjistudy
+package com.app.kanjistudy.scan.usecase
 
+import com.app.kanjistudy.scan.recognizer.TextRecognizer
 import com.google.mlkit.vision.common.InputImage
 import javax.inject.Inject
 
@@ -12,11 +13,8 @@ class ScanKanjiUseCase @Inject constructor(
 
     suspend fun analyze(
         image: InputImage,
-        isPaused: Boolean,
         lastRecognizedKanji: String?
     ): String? {
-
-        if (isPaused) return null
 
         val now = System.currentTimeMillis()
         if (now - lastUpdateTime < throttleMs) return null

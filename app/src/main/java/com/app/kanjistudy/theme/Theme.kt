@@ -1,4 +1,4 @@
-package com.app.kanjistudy.ui.theme
+package com.app.kanjistudy.theme
 
 import androidx.compose.material3.MaterialTheme as Material3Theme
 import androidx.compose.material3.darkColorScheme
