@@ -9,18 +9,27 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class KanjiRepository @Inject constructor(
     private val kanjiDao: KanjiDao,
     private val api: KanjiApiService,
 ) {
+
+    private companion object {
+        const val MIN_KANJI_COUNT = 2140
+        const val CHUNK_SIZE = 8
+        const val MAX_RETRIES = 3
+        const val RETRY_DELAY_MS = 400L
+    }
+
     suspend fun ensureAllKanjisLoaded(
         onProgress: (Float) -> Unit
     ): List<KanjiData> = withContext(Dispatchers.IO) {
 
         val count = kanjiDao.countKanjis()
-        if (count >= 2140) {
+        if (count >= MIN_KANJI_COUNT) {
             return@withContext kanjiDao.getAllKanjis()
         }
 
@@ -28,12 +37,11 @@ class KanjiRepository @Inject constructor(
         val total = joyoKanjis.size
         var processed = 0
 
-        joyoKanjis.chunked(40).forEach { chunk ->
+        joyoKanjis.chunked(CHUNK_SIZE).forEach { chunk ->
             val kanjiData = coroutineScope {
                 chunk.map { kanji ->
                     async {
-                        runCatching { api.getReadingMeaning(kanji) }.getOrNull()
-                    }
+                        fetchReadingMeaningWithRetry(kanji)                    }
                 }.awaitAll().filterNotNull()
             }
 
@@ -53,5 +61,19 @@ class KanjiRepository @Inject constructor(
     }
 
     fun getLearnedKanjis(): Flow<List<KanjiData>> = kanjiDao.getLearnedKanjis()
+
+    private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiData? {
+        repeat(MAX_RETRIES) { attempt ->
+            runCatching {
+                return api.getReadingMeaning(kanji)
+            }
+
+            if (attempt < MAX_RETRIES - 1) {
+                delay(RETRY_DELAY_MS * (attempt + 1))
+            }
+        }
+
+        return null
+    }
 
 }

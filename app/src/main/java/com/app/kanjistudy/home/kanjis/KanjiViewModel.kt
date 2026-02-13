@@ -67,8 +67,12 @@ class KanjiViewModel @Inject constructor(
                 }
 
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Erro ao carregar kanjis") }
-            }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erro ao carregar kanjis"
+                    )
+                }            }
 
         }
     }
