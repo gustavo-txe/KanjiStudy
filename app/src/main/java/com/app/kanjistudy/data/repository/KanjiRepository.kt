@@ -18,8 +18,8 @@ class KanjiRepository @Inject constructor(
 ) {
 
     private companion object {
-        const val MIN_KANJI_COUNT = 2140
-        const val CHUNK_SIZE = 8
+        const val MIN_KANJI_COUNT = 2136
+        const val CHUNK_SIZE = 40
         const val MAX_RETRIES = 3
         const val RETRY_DELAY_MS = 400L
     }

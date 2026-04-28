@@ -25,7 +25,7 @@ fun SearchBarKanji(onSearch: (String) -> Unit) {
             query = it
             onSearch(it)
         },
-        label = { Text("Search for kanjis, meanings...") },
+        label = { Text("Search for kanji, meanings...") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
         modifier = Modifier
             .fillMaxWidth()

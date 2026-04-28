@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.debugImplementation
 
 plugins {
     alias(libs.plugins.android.application)
@@ -16,8 +17,8 @@ android {
         applicationId = "com.app.kanjistudy"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.2"
+        versionCode = 7
+        versionName = "1.0.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -70,6 +71,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation (libs.androidx.material.icons.extended)
+
+    //debug-leakCanary
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
 
     //Material 3
     implementation("androidx.compose.material3:material3")
