@@ -17,8 +17,8 @@ android {
         applicationId = "com.app.kanjistudy"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.5"
+        versionCode = 9
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
