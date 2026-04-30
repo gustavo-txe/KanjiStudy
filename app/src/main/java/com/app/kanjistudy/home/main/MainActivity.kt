@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
 
                 reviewJob?.cancel()
                 reviewJob = lifecycleScope.launch {
-                    delay(3 * 60 * 1000L)
+                    delay(10 * 1000L)
                     val sessionDuration = System.currentTimeMillis() - sessionStartTimeMs
                     inAppReviewManager.maybeRequestReview(this@MainActivity, sessionDuration)
                 }

@@ -22,11 +22,11 @@ class InAppReviewManager @Inject constructor(
         private const val KEY_LAST_PROMPT_DAY = "last_prompt_day"
         private const val KEY_PROMPT_COUNT = "prompt_count"
 
-        private const val MIN_DAYS_AFTER_INSTALL = 5L
-        private const val MIN_STREAK_DAYS = 3L
-        private const val MIN_SESSION_TIME_MS = 3 * 60 * 1000L
-        private const val PROMPT_COOLDOWN_DAYS = 15L
-        private const val MAX_PROMPTS = 4
+        private const val MIN_DAYS_AFTER_INSTALL = 0L
+        private const val MIN_STREAK_DAYS = 0L
+        private const val MIN_SESSION_TIME_MS = 10 * 1000L
+        private const val PROMPT_COOLDOWN_DAYS = 0L
+        private const val MAX_PROMPTS = 50
     }
 
     fun onAppSessionStarted(nowMs: Long = System.currentTimeMillis()) {
