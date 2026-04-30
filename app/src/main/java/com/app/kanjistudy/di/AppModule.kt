@@ -1,6 +1,7 @@
 package com.app.kanjistudy.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.Room
 import com.app.kanjistudy.data.remote.KanjiApiService
 import com.app.kanjistudy.data.local.AppDatabase
@@ -17,6 +18,14 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    private const val APP_PREFS = "kanji_study_prefs"
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
+        return context.getSharedPreferences(APP_PREFS, Context.MODE_PRIVATE)
+    }
 
     @Provides
     @Singleton

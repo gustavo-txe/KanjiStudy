@@ -126,6 +126,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.0")
     implementation("androidx.camera:camera-view:1.4.0")
 
+    implementation("com.google.android.play:review-ktx:2.0.2")
+
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
