@@ -78,8 +78,10 @@ fun KanjiListScreen(
                 onboardingManager.markHintShown("home")
                 showHomeHint = false
             },
-            title = { Text("Tip: Home Screen") },
-            text = { Text("Wait for the download progress bar to finish. Then you can search kanji and mark or unmark them as learned.") },
+            title = { Text("Welcome to Kanji Scanner!") },
+            text = { Text("This quick tutorial will guide you through the app’s features.\n" +
+                    "\n" +
+                    "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.") },
             confirmButton = {
                 TextButton(onClick = {
                     onboardingManager.markHintShown("home")

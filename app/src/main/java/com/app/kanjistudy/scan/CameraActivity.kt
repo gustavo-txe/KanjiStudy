@@ -87,7 +87,7 @@ fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
                 showScanHint = false
             },
             title = { Text("Tip: Scan Screen") },
-            text = { Text("Use your camera OCR to identify kanji. Tap a kanji for Google details, or long-press to copy it.") },
+            text = { Text("Use your camera to identify kanji. Tap a kanji for Google details, or long-press to copy it.") },
             confirmButton = {
                 TextButton(onClick = {
                     onboardingManager.markHintShown("scan")

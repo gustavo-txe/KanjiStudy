@@ -46,8 +46,8 @@ fun LearnedScreen(
                 onboardingManager.markHintShown("learned")
                 showLearnedHint = false
             },
-            title = { Text("Tip: Learned Screen") },
-            text = { Text("This screen shows all Joyo kanji you marked as learned so you can track your progress.") },
+            title = { Text("Tip: Learned Jōyō kanji") },
+            text = { Text("This screen shows all Jōyō kanji you marked as learned so you can track your progress.") },
             confirmButton = {
                 TextButton(onClick = {
                     onboardingManager.markHintShown("learned")

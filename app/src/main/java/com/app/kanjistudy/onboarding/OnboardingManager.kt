@@ -12,12 +12,6 @@ class OnboardingManager @Inject constructor(
 ) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    fun shouldShowTutorial(): Boolean = !prefs.getBoolean(KEY_TUTORIAL_COMPLETED, false)
-
-    fun setTutorialCompleted() {
-        prefs.edit { putBoolean(KEY_TUTORIAL_COMPLETED, true) }
-    }
-
     fun shouldShowHint(key: String): Boolean = !prefs.getBoolean("hint_$key", false)
 
     fun markHintShown(key: String) {
@@ -26,6 +20,5 @@ class OnboardingManager @Inject constructor(
 
     private companion object {
         const val PREFS_NAME = "onboarding_prefs"
-        const val KEY_TUTORIAL_COMPLETED = "tutorial_completed"
     }
 }
