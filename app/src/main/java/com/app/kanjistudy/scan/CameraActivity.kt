@@ -185,7 +185,7 @@ fun CameraScreen(
 
         if (showScanHint && pauseFabCenterX > 0.dp) {
             OnboardingOverlay(
-                message = "Use este botão para pausar/retomar a captura e revisar melhor os kanjis detectados.",
+                message = "Scan\n\nUse your camera to identify kanji. Tap a kanji for Google details, or long-press to copy it\n\nClick the button in the bottom-right corner to pause the scan.",
                 onDismiss = {
                     onboardingManager.markHintShown("scan")
                     showScanHint = false
@@ -193,8 +193,9 @@ fun CameraScreen(
                 highlight = OnboardingHighlight(
                     centerX = pauseFabCenterX,
                     centerY = pauseFabCenterY,
-                    radius = 52.dp
-                )
+                    radius = 40.dp
+                ),
+
             )
         }
 

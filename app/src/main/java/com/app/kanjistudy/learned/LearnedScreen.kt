@@ -99,7 +99,7 @@ fun LearnedScreen(
 
         if (showLearnedHint) {
             OnboardingOverlay(
-                message = "Esta tela mostra os kanjis marcados como aprendidos para acompanhar seu progresso.",
+                message = "Learned Jōyō kanji\n\nThis screen shows all Jōyō kanji you marked as learned so you can track your progress.",
                 onDismiss = {
                     onboardingManager.markHintShown("learned")
                     showLearnedHint = false

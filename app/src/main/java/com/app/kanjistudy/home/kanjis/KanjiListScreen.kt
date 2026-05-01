@@ -61,7 +61,6 @@ fun KanjiListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
-    val density = LocalDensity.current
     val customTab = remember { CustomTab() }
 
     val kanjisKunMap = uiState.kunReadings
@@ -77,9 +76,6 @@ fun KanjiListScreen(
     var dialogType by remember { mutableStateOf<KanjiDialog?>(null) }
 
     var showHomeHint by remember { mutableStateOf(onboardingManager.shouldShowHint("home")) }
-
-    var progressBarCenterX by remember { mutableStateOf(0.dp) }
-    var progressBarCenterY by remember { mutableStateOf(0.dp) }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -107,10 +103,7 @@ fun KanjiListScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         KanjiLoadingScreen(
             viewModel = viewModel,
-            modifier = Modifier.onGloballyPositioned { coordinates ->
-                progressBarCenterX = with(density) { coordinates.boundsInRoot().center.x.toDp() }
-                progressBarCenterY = with(density) { coordinates.boundsInRoot().center.y.toDp() }
-            }
+            modifier = Modifier
         )
 
         SearchBarKanji(onSearch = viewModel::onQueryChange)
@@ -280,18 +273,15 @@ fun KanjiListScreen(
 
             null -> Unit
         }
-        if (showHomeHint && progressBarCenterX > 0.dp) {
+        if (showHomeHint) {
             OnboardingOverlay(
-                message = "Downloading kanji. Please wait... ${(uiState.loadingProgress * 100).toInt()}%",
+                message = "Welcome to Kanji Scanner!\n\n"+
+                        "This quick tutorial will guide you through the app’s features.\n\n"+
+                "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.",
                 onDismiss = {
                     onboardingManager.markHintShown("home")
                     showHomeHint = false
-                },
-                highlight = OnboardingHighlight(
-                    centerX = progressBarCenterX,
-                    centerY = progressBarCenterY,
-                    radius = 88.dp
-                )
+                }
             )
         }
     }
