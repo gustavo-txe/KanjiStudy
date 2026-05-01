@@ -37,8 +37,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -52,13 +55,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
+import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
+import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
 
 @SuppressLint("ContextCastToActivity")
 @Composable
-fun ScanScreen(viewModel: ScanViewModel = hiltViewModel(),
-               onboardingManager: OnboardingManager) {
+fun ScanScreen(
+    viewModel: ScanViewModel = hiltViewModel(),
+    onboardingManager: OnboardingManager
+) {
     CameraPermission {
         CameraScreen(viewModel, onboardingManager)
     }
@@ -66,8 +73,9 @@ fun ScanScreen(viewModel: ScanViewModel = hiltViewModel(),
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
-                 onboardingManager: OnboardingManager
+fun CameraScreen(
+    viewModel: ScanViewModel = hiltViewModel(),
+    onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val customTab = remember { CustomTab() }
@@ -75,27 +83,14 @@ fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
     val clipboardManager = LocalClipboardManager.current
 
     val context = LocalContext.current
+    val density = LocalDensity.current
 
     var dialogKanji by remember { mutableStateOf<Char?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
 
-    if (showScanHint) {
-        AlertDialog(
-            onDismissRequest = {
-                onboardingManager.markHintShown("scan")
-                showScanHint = false
-            },
-            title = { Text("Tip: Scan Screen") },
-            text = { Text("Use your camera to identify kanji. Tap a kanji for Google details, or long-press to copy it.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onboardingManager.markHintShown("scan")
-                    showScanHint = false
-                }) { Text("Got it") }
-            }
-        )
-    }
+    var pauseFabCenterX by remember { mutableStateOf(0.dp) }
+    var pauseFabCenterY by remember { mutableStateOf(0.dp) }
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
@@ -174,6 +169,10 @@ fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(32.dp)
+                .onGloballyPositioned { coordinates ->
+                    pauseFabCenterX = with(density) { coordinates.boundsInRoot().center.x.toDp() }
+                    pauseFabCenterY = with(density) { coordinates.boundsInRoot().center.y.toDp() }
+                }
         ) {
 
             Icon(
@@ -183,7 +182,25 @@ fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
             )
 
         }
+
+        if (showScanHint && pauseFabCenterX > 0.dp) {
+            OnboardingOverlay(
+                message = "Use este botão para pausar/retomar a captura e revisar melhor os kanjis detectados.",
+                onDismiss = {
+                    onboardingManager.markHintShown("scan")
+                    showScanHint = false
+                },
+                highlight = OnboardingHighlight(
+                    centerX = pauseFabCenterX,
+                    centerY = pauseFabCenterY,
+                    radius = 52.dp
+                )
+            )
+        }
+
     }
+
+
 
     dialogKanji?.let { kanji ->
         AlertDialog(

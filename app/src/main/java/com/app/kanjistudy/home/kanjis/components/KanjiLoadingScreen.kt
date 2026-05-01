@@ -34,7 +34,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.home.kanjis.KanjiViewModel
 
 @Composable
-fun KanjiLoadingScreen(viewModel: KanjiViewModel = hiltViewModel()) {
+fun KanjiLoadingScreen(
+    viewModel: KanjiViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
+) {
     val progress = viewModel.uiState.collectAsStateWithLifecycle().value.loadingProgress
     val isLoading = viewModel.uiState.collectAsStateWithLifecycle().value.isLoading
     val infiniteTransition = rememberInfiniteTransition(label = "infiniteColor1")
@@ -70,7 +73,7 @@ fun KanjiLoadingScreen(viewModel: KanjiViewModel = hiltViewModel()) {
 
     if (isLoading) {
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center

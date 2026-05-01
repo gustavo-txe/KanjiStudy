@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.onboarding.OnboardingManager
+import com.app.kanjistudy.onboarding.OnboardingOverlay
 
 @Composable
 fun LearnedScreen(
@@ -40,73 +41,70 @@ fun LearnedScreen(
 
     var showLearnedHint by remember { mutableStateOf(onboardingManager.shouldShowHint("learned")) }
 
-    if (showLearnedHint) {
-        AlertDialog(
-            onDismissRequest = {
-                onboardingManager.markHintShown("learned")
-                showLearnedHint = false
-            },
-            title = { Text("Tip: Learned Jōyō kanji") },
-            text = { Text("This screen shows all Jōyō kanji you marked as learned so you can track your progress.") },
-            confirmButton = {
-                TextButton(onClick = {
+
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        selectedKanji?.let { kanji ->
+            AlertDialog(
+                onDismissRequest = { selectedKanji = null },
+                title = { Text("Remove Kanji?") },
+                text = {
+                    Text("Would you like to remove the kanji ${kanji.kanji} as learned?")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.toggleLearnedKanji(kanji.kanji)
+                        selectedKanji = null
+                    }) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { selectedKanji = null }) {
+                        Text("No")
+                    }
+                }
+        )
+    }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(uiState.filteredKanjis) { kanji ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .clickable {
+                            selectedKanji = kanji
+                        },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = kanji.kanji,
+                            fontSize = 60.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showLearnedHint) {
+            OnboardingOverlay(
+                message = "Esta tela mostra os kanjis marcados como aprendidos para acompanhar seu progresso.",
+                onDismiss = {
                     onboardingManager.markHintShown("learned")
                     showLearnedHint = false
-                }) { Text("Got it") }
-            }
-        )
-    }
-
-    selectedKanji?.let { kanji ->
-        AlertDialog(
-            onDismissRequest = { selectedKanji = null },
-            title = { Text("Remove Kanji?") },
-            text = {
-                Text("Would you like to remove the kanji ${kanji.kanji} as learned?")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.toggleLearnedKanji(kanji.kanji)
-                    selectedKanji = null
-                }) {
-                    Text("Yes")
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { selectedKanji = null }) {
-                    Text("No")
-                }
-            }
-        )
-    }
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(uiState.filteredKanjis) { kanji ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .clickable {
-                        selectedKanji = kanji
-                    },
-                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = kanji.kanji,
-                        fontSize = 60.sp
-                    )
-                }
-            }
+            )
         }
     }
 }
