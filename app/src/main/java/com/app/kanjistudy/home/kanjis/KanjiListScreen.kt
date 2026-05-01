@@ -35,10 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toDp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +49,9 @@ import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import com.app.kanjistudy.home.kanjis.components.KanjiLoadingScreen
 import com.app.kanjistudy.home.kanjis.components.SearchBarKanji
+import com.app.kanjistudy.onboarding.OnboardingHighlight
 import kotlin.collections.forEach
+import com.app.kanjistudy.onboarding.OnboardingOverlay
 
 @Composable
 fun KanjiListScreen(
@@ -71,25 +76,8 @@ fun KanjiListScreen(
     var dialogType by remember { mutableStateOf<KanjiDialog?>(null) }
 
     var showHomeHint by remember { mutableStateOf(onboardingManager.shouldShowHint("home")) }
-
-    if (showHomeHint) {
-        AlertDialog(
-            onDismissRequest = {
-                onboardingManager.markHintShown("home")
-                showHomeHint = false
-            },
-            title = { Text("Welcome to Kanji Scanner!") },
-            text = { Text("This quick tutorial will guide you through the app’s features.\n" +
-                    "\n" +
-                    "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onboardingManager.markHintShown("home")
-                    showHomeHint = false
-                }) { Text("Got it") }
-            }
-        )
-    }
+    var progressBarCenterX by remember { mutableStateOf(0.dp) }
+    var progressBarCenterY by remember { mutableStateOf(0.dp) }
 
 
     LaunchedEffect(Unit) {
@@ -116,7 +104,14 @@ fun KanjiListScreen(
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
-        KanjiLoadingScreen(viewModel)
+        KanjiLoadingScreen(
+            viewModel = viewModel,
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                val density = coordinates.density
+                progressBarCenterX = with(density) { coordinates.boundsInRoot().center.x.toDp() }
+                progressBarCenterY = with(density) { coordinates.boundsInRoot().center.y.toDp() }
+            }
+        )
 
         SearchBarKanji(onSearch = viewModel::onQueryChange)
 
@@ -285,7 +280,21 @@ fun KanjiListScreen(
 
             null -> Unit
         }
+
+        if (showHomeHint && progressBarCenterX > 0.dp) {
+            OnboardingOverlay(
+                message = "Downloading kanji. Please wait... ${(uiState.loadingProgress * 100).toInt()}%",
+                onDismiss = {
+                    onboardingManager.markHintShown("home")
+                    showHomeHint = false
+                },
+                highlight = OnboardingHighlight(
+                    centerX = progressBarCenterX,
+                    centerY = progressBarCenterY,
+                    radius = 88.dp
+                )
+            )
+        }
     }
 }
-
 
