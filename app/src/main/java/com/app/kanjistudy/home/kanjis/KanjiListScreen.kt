@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import com.app.kanjistudy.onboarding.OnboardingManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -50,6 +51,7 @@ import kotlin.collections.forEach
 @Composable
 fun KanjiListScreen(
     viewModel: KanjiViewModel = hiltViewModel(),
+    onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -67,6 +69,26 @@ fun KanjiListScreen(
     }
 
     var dialogType by remember { mutableStateOf<KanjiDialog?>(null) }
+
+    var showHomeHint by remember { mutableStateOf(onboardingManager.shouldShowHint("home")) }
+
+    if (showHomeHint) {
+        AlertDialog(
+            onDismissRequest = {
+                onboardingManager.markHintShown("home")
+                showHomeHint = false
+            },
+            title = { Text("Tip: Home Screen") },
+            text = { Text("Wait for the download progress bar to finish. Then you can search kanji and mark or unmark them as learned.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onboardingManager.markHintShown("home")
+                    showHomeHint = false
+                }) { Text("Got it") }
+            }
+        )
+    }
+
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->

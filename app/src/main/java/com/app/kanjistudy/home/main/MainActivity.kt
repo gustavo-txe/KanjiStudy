@@ -9,6 +9,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.app.kanjistudy.navigation.AppNavigation
+import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.review.InAppReviewManager
 import com.app.kanjistudy.theme.KanjiStudyTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,6 +23,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var inAppReviewManager: InAppReviewManager
+
+    @Inject
+    lateinit var onboardingManager: OnboardingManager
 
     private var sessionStartTimeMs: Long = 0L
     private var reviewJob: Job? = null
@@ -52,8 +56,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KanjiStudyTheme {
-                AppNavigation()
-            }
+                AppNavigation(onboardingManager = onboardingManager)            }
         }
     }
 }

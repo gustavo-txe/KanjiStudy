@@ -52,19 +52,23 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
+import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
 
 @SuppressLint("ContextCastToActivity")
 @Composable
-fun ScanScreen(viewModel: ScanViewModel = hiltViewModel()) {
+fun ScanScreen(viewModel: ScanViewModel = hiltViewModel(),
+               onboardingManager: OnboardingManager) {
     CameraPermission {
-        CameraScreen(viewModel)
+        CameraScreen(viewModel, onboardingManager)
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CameraScreen(viewModel: ScanViewModel = hiltViewModel()) {
+fun CameraScreen(viewModel: ScanViewModel = hiltViewModel(),
+                 onboardingManager: OnboardingManager
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val customTab = remember { CustomTab() }
 
@@ -73,6 +77,25 @@ fun CameraScreen(viewModel: ScanViewModel = hiltViewModel()) {
     val context = LocalContext.current
 
     var dialogKanji by remember { mutableStateOf<Char?>(null) }
+
+    var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
+
+    if (showScanHint) {
+        AlertDialog(
+            onDismissRequest = {
+                onboardingManager.markHintShown("scan")
+                showScanHint = false
+            },
+            title = { Text("Tip: Scan Screen") },
+            text = { Text("Use your camera OCR to identify kanji. Tap a kanji for Google details, or long-press to copy it.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onboardingManager.markHintShown("scan")
+                    showScanHint = false
+                }) { Text("Got it") }
+            }
+        )
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->

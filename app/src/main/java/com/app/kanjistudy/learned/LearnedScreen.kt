@@ -27,14 +27,35 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.onboarding.OnboardingManager
 
 @Composable
 fun LearnedScreen(
-    viewModel: LearnedViewModel = hiltViewModel()
+    viewModel: LearnedViewModel = hiltViewModel(),
+    onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var selectedKanji by remember { mutableStateOf<KanjiData?>(null) }
+
+    var showLearnedHint by remember { mutableStateOf(onboardingManager.shouldShowHint("learned")) }
+
+    if (showLearnedHint) {
+        AlertDialog(
+            onDismissRequest = {
+                onboardingManager.markHintShown("learned")
+                showLearnedHint = false
+            },
+            title = { Text("Tip: Learned Screen") },
+            text = { Text("This screen shows all Joyo kanji you marked as learned so you can track your progress.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onboardingManager.markHintShown("learned")
+                    showLearnedHint = false
+                }) { Text("Got it") }
+            }
+        )
+    }
 
     selectedKanji?.let { kanji ->
         AlertDialog(
