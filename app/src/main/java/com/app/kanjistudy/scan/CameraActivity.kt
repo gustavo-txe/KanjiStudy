@@ -36,7 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -46,7 +51,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -92,6 +101,11 @@ fun CameraScreen(
     var pauseFabCenterX by remember { mutableStateOf(0.dp) }
     var pauseFabCenterY by remember { mutableStateOf(0.dp) }
 
+    var buttonCenterX by remember { mutableStateOf(0.dp) }
+    var buttonCenterY by remember { mutableStateOf(0.dp) }
+
+    var rect by remember { mutableStateOf<Rect?>(null) }
+
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -122,18 +136,25 @@ fun CameraScreen(
                     .align(Alignment.TopCenter)
             ) {
                 Text(
-                    text = "Click on a kanji for more details",
-                    modifier = Modifier.padding(top = 16.dp),
-                    style = TextStyle(fontSize = 20.sp)
-                )
+                    text = "Click on a kanji for more details\n  Pause the camera for review",
+                    modifier = Modifier
+                        .padding(top = 16.dp)
+                        .onGloballyPositioned { coordinates ->
+                            val textPositioned = coordinates.boundsInParent().center
+                            buttonCenterX = with(density) { textPositioned.x.toDp() }
+                            buttonCenterY = with(density) { textPositioned.y.toDp() }
+                        },
+                    style = TextStyle(fontSize = 20.sp),
 
-                Text(
-                    text = "  Pause the camera for review",
-                    modifier = Modifier.padding(top = 5.dp),
-                    style = TextStyle(fontSize = 20.sp)
-                )
+                    )
+
             }
+            InstructionHintOverlay(
+                rect = rect,
+                buttonX = buttonCenterX,
+                buttonY = buttonCenterY
 
+            )
         }
         LazyVerticalGrid(
             columns = GridCells.Fixed(4),
@@ -170,8 +191,9 @@ fun CameraScreen(
                 .align(Alignment.BottomEnd)
                 .padding(32.dp)
                 .onGloballyPositioned { coordinates ->
-                    pauseFabCenterX = with(density) { coordinates.boundsInRoot().center.x.toDp() }
-                    pauseFabCenterY = with(density) { coordinates.boundsInRoot().center.y.toDp() }
+                    val fabCenterInParent = coordinates.boundsInParent().center
+                    pauseFabCenterX = with(density) { fabCenterInParent.x.toDp() }
+                    pauseFabCenterY = with(density) { fabCenterInParent.y.toDp() }
                 }
         ) {
 
@@ -196,7 +218,7 @@ fun CameraScreen(
                     radius = 40.dp
                 ),
 
-            )
+                )
         }
 
     }
@@ -288,6 +310,43 @@ fun CameraPreview(
     )
 }
 
+@Composable
+private fun InstructionHintOverlay(
+    rect: Rect?,
+    buttonX: Dp,
+    buttonY: Dp
+) {
+    if (rect == null) return
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = 0.99f)
+    ) {
+        drawRect(color = Color.Black.copy(alpha = 0.75f))
+
+        val horizontalPadding = 20.dp.toPx()
+        val verticalPadding = 10.dp.toPx()
+        val cornerRadius = 14.dp.toPx()
+
+        val rectWidth = rect.width + (horizontalPadding * 2)
+        val rectHeight = rect.height + (verticalPadding * 2)
+
+        drawRoundRect(
+            color = Color.Transparent,
+            topLeft = Offset(
+                x = buttonX.toPx() - rectWidth / 2,
+                y = buttonY.toPx() - rectHeight / 2
+            ),
+            size = Size(
+                width = rectWidth,
+                height = rectHeight
+            ),
+            cornerRadius = CornerRadius(cornerRadius, cornerRadius),
+            blendMode = BlendMode.Clear
+        )
+    }
+}
 
 @Composable
 fun CameraPermission(
