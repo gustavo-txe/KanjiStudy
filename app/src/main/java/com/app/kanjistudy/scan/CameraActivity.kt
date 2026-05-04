@@ -54,7 +54,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Canvas
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -101,9 +104,6 @@ fun CameraScreen(
     var pauseFabCenterX by remember { mutableStateOf(0.dp) }
     var pauseFabCenterY by remember { mutableStateOf(0.dp) }
 
-    var buttonCenterX by remember { mutableStateOf(0.dp) }
-    var buttonCenterY by remember { mutableStateOf(0.dp) }
-
     var rect by remember { mutableStateOf<Rect?>(null) }
 
     LaunchedEffect(viewModel) {
@@ -133,27 +133,26 @@ fun CameraScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Click on a kanji for more details\n  Pause the camera for review",
+                    text = "Click on a kanji for more details\nPause the camera for review",
                     modifier = Modifier
                         .padding(top = 16.dp)
                         .onGloballyPositioned { coordinates ->
-                            val textPositioned = coordinates.boundsInParent().center
-                            buttonCenterX = with(density) { textPositioned.x.toDp() }
-                            buttonCenterY = with(density) { textPositioned.y.toDp() }
+                            rect = coordinates.boundsInParent()
+
                         },
-                    style = TextStyle(fontSize = 20.sp),
-
-                    )
-
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
             }
             InstructionHintOverlay(
-                rect = rect,
-                buttonX = buttonCenterX,
-                buttonY = buttonCenterY
-
+                rect = rect
             )
         }
         LazyVerticalGrid(
@@ -175,7 +174,6 @@ fun CameraScreen(
                             onLongClick = {
                                 viewModel.onKanjiLongClick(char)
                             }
-
                         )
                         .fillMaxWidth(),
                     fontSize = 50.sp,
@@ -217,13 +215,9 @@ fun CameraScreen(
                     centerY = pauseFabCenterY,
                     radius = 40.dp
                 ),
-
-                )
+            )
         }
-
     }
-
-
 
     dialogKanji?.let { kanji ->
         AlertDialog(
@@ -312,16 +306,14 @@ fun CameraPreview(
 
 @Composable
 private fun InstructionHintOverlay(
-    rect: Rect?,
-    buttonX: Dp,
-    buttonY: Dp
+    rect: Rect?
 ) {
     if (rect == null) return
 
     Canvas(
         modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer(alpha = 0.99f)
+            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     ) {
         drawRect(color = Color.Black.copy(alpha = 0.75f))
 
@@ -335,8 +327,8 @@ private fun InstructionHintOverlay(
         drawRoundRect(
             color = Color.Transparent,
             topLeft = Offset(
-                x = buttonX.toPx() - rectWidth / 2,
-                y = buttonY.toPx() - rectHeight / 2
+                x = rect.left - horizontalPadding,
+                y = rect.top - verticalPadding
             ),
             size = Size(
                 width = rectWidth,
