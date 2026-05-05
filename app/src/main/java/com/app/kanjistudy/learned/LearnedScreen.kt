@@ -1,20 +1,33 @@
 package com.app.kanjistudy.learned
 
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +61,11 @@ fun LearnedScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    var showRemoveDialog by remember { mutableStateOf(false) }
+
     var selectedKanji by remember { mutableStateOf<KanjiData?>(null) }
 
     var showLearnedHint by remember { mutableStateOf(onboardingManager.shouldShowHint("learned")) }
@@ -52,21 +73,98 @@ fun LearnedScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         selectedKanji?.let { kanji ->
             AlertDialog(
-                onDismissRequest = { selectedKanji = null },
-                title = { Text("Remove Kanji?") },
+                onDismissRequest = {
+                    selectedKanji = null
+                    showRemoveDialog = false
+                },
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        IconButton(onClick = {
+                            clipboardManager.setText(AnnotatedString(kanji.kanji))
+                            Toast.makeText(
+                                context,
+                                "Kanji copied!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }) {
+                            Icon(modifier = Modifier.height(20.dp).width(20.dp),
+                                imageVector = Icons.Filled.ContentCopy,
+                                contentDescription = "Copy kanji",
+                                tint = Color(0xFF282828)
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(onClick = { showRemoveDialog = true }) {
+                            Icon(modifier = Modifier.height(27.dp).width(27.dp),
+                                imageVector = Icons.Filled.DeleteOutline,
+                                contentDescription = "Remove learned kanji",
+                                tint = Color(0xFF800000)
+                            )
+                        }
+                    }
+                },
                 text = {
-                    Text("Would you like to remove the kanji ${kanji.kanji} as learned?")
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(animationSpec = tween(220)) +
+                                scaleIn(animationSpec = tween(220), initialScale = 0.92f)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = kanji.kanji,
+                                fontSize = 96.sp,
+                                lineHeight = 98.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceAround
+                            ) {
+                                DetailColumn(title = "Kun'yomi:", items = kanji.kunReadings)
+                                DetailColumn(title = "On'yomi:", items = kanji.onReadings)
+                                DetailColumn(title = "Meanings:", items = kanji.meanings)
+                            }
+                        }
+                    }
                 },
                 confirmButton = {
+                    TextButton(onClick = { selectedKanji = null }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
+
+        if (showRemoveDialog && selectedKanji != null) {
+            AlertDialog(
+                onDismissRequest = { showRemoveDialog = false },
+                title = { Text("Remove Kanji?") },
+                text = {
+                    Text("Would you like to remove the kanji ${selectedKanji?.kanji} as learned?")                },
+                confirmButton = {
                     TextButton(onClick = {
-                        viewModel.toggleLearnedKanji(kanji.kanji)
+                        selectedKanji?.let { viewModel.toggleLearnedKanji(it.kanji) }
+                        showRemoveDialog = false
                         selectedKanji = null
                     }) {
                         Text("Yes")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { selectedKanji = null }) {
+                    TextButton(onClick = { showRemoveDialog = false }) {
                         Text("No")
                     }
                 }
@@ -148,6 +246,23 @@ fun LearnedScreen(
                     showLearnedHint = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun DetailColumn(
+    title: String,
+    items: List<String>
+) {
+    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+        Text(
+            text = title,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp
+        )
+        items.forEach {
+            Text(text = it, fontSize = 13.sp)
         }
     }
 }
