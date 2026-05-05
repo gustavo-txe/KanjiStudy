@@ -8,6 +8,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.app.kanjistudy.home.kanjis.components.SplashContent
 import com.app.kanjistudy.navigation.AppNavigation
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.review.InAppReviewManager
@@ -55,8 +56,7 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            KanjiStudyTheme {
-                AppNavigation(onboardingManager = onboardingManager)            }
+            SplashContent(onboardingManager = onboardingManager)           }
         }
     }
-}
+

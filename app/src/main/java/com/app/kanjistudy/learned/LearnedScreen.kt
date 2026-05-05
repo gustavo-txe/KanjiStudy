@@ -84,7 +84,7 @@ fun LearnedScreen(
                 ) {
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(15.dp).padding(0.dp, 5.dp,
+                    modifier = Modifier.fillMaxWidth().height(15.dp).padding(0.dp, 6.dp,
                         0.dp, 0.dp),
                     color = Color(0xFF048006),
 
