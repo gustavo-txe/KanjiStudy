@@ -8,10 +8,8 @@
 
     <!-- Splash Theme -->
     <style name="Theme.KanjiStudy.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenBackground">@android:color/black</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/iconkanji</item>
-
-        <!-- VERY IMPORTANT -->
         <item name="postSplashScreenTheme">@style/Theme.KanjiStudy</item>
     </style>
 

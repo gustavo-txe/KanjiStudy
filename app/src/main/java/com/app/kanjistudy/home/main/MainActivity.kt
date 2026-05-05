@@ -8,7 +8,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import com.app.kanjistudy.home.kanjis.components.SplashContent
 import com.app.kanjistudy.navigation.AppNavigation
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.review.InAppReviewManager
@@ -30,11 +29,17 @@ class MainActivity : ComponentActivity() {
 
     private var sessionStartTimeMs: Long = 0L
     private var reviewJob: Job? = null
+    private var keepSplashOnScreen = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
+        lifecycleScope.launch {
+            delay(2_000L)
+            keepSplashOnScreen = false
+        }
         enableEdgeToEdge()
 
         lifecycle.addObserver(object : DefaultLifecycleObserver {
@@ -56,7 +61,10 @@ class MainActivity : ComponentActivity() {
         })
 
         setContent {
-            SplashContent(onboardingManager = onboardingManager)           }
+            KanjiStudyTheme {
+                AppNavigation(onboardingManager = onboardingManager)
+            }
         }
     }
+}
 
