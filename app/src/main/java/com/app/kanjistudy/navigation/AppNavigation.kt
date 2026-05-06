@@ -1,5 +1,7 @@
 package com.app.kanjistudy.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -18,7 +20,9 @@ import com.app.kanjistudy.learned.LearnedScreen
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.scan.ScanScreen
 import com.app.kanjistudy.onboarding.OnboardingManager
+import com.app.kanjistudy.transcription.TranscriptionScreen
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun AppNavigation(
     onboardingManager: OnboardingManager
@@ -55,7 +59,14 @@ fun AppNavigation(
         ) {
             composable(Screens.Learned.route) { LearnedScreen(onboardingManager = onboardingManager) }
             composable(Screens.Home.route) { KanjiListScreen(onboardingManager = onboardingManager) }
-            composable(Screens.Scan.route) { ScanScreen(onboardingManager = onboardingManager) }
+            composable(Screens.Scan.route) {
+                ScanScreen(onboardingManager = onboardingManager, onOpenTranscription = {
+                    navController.navigate(Screens.Transcription.route)
+                })
+            }
+            composable(Screens.Transcription.route) {
+                TranscriptionScreen(onBack = { navController.popBackStack() })
+            }
         }
     }
 }

@@ -67,6 +67,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
+import androidx.compose.material3.Button
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
@@ -76,18 +77,19 @@ import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
 @Composable
 fun ScanScreen(
     viewModel: ScanViewModel = hiltViewModel(),
-    onboardingManager: OnboardingManager
+    onboardingManager: OnboardingManager,
+    onOpenTranscription: () -> Unit
 ) {
     CameraPermission {
-        CameraScreen(viewModel, onboardingManager)
-    }
+        CameraScreen(viewModel, onboardingManager, onOpenTranscription)    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CameraScreen(
     viewModel: ScanViewModel = hiltViewModel(),
-    onboardingManager: OnboardingManager
+    onboardingManager: OnboardingManager,
+    onOpenTranscription: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val customTab = remember { CustomTab() }
@@ -181,6 +183,15 @@ fun CameraScreen(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+
+        Button(
+            onClick = onOpenTranscription,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(24.dp)
+        ) {
+            Text("Open Transcription")
         }
 
         FloatingActionButton(

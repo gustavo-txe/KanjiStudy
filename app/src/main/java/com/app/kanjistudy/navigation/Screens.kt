@@ -11,5 +11,6 @@ sealed class Screens(val route: String, val title: String, val icon: ImageVector
     object Learned : Screens("learned", "Learned", Icons.Default.Create)
     object Home : Screens("home", "Kanji", Icons.Default.Home)
     object Scan : Screens("scan", "Scan", Icons.Default.Camera)
+    object Transcription : Screens("transcription", "Transcription", Icons.Default.Camera)
 
 }

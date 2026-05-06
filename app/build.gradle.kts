@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.app.kanjistudy"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 35
         versionCode = 9
         versionName = "1.0.8"
@@ -82,6 +82,10 @@ dependencies {
 
     // Icons
     implementation("androidx.compose.material:material-icons-extended")
+
+    implementation("com.alphacephei:vosk-android:0.3.75")
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-ui:1.5.1")
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
