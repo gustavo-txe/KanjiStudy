@@ -1,10 +1,8 @@
 package com.app.kanjistudy.transcription
 
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,7 +39,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 
-@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun TranscriptionScreen(
     onBack: () -> Unit,
@@ -124,8 +122,13 @@ fun TranscriptionScreen(
                         )
                     }
 
-                    Button(onClick = { viewModel.transcribe() }, enabled = uiState.selectedUri != null && !uiState.isTranscribing && uiState.isModelReady) {
-                        Text(if (uiState.isTranscribing) "Transcribing..." else "Start Transcription")
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(onClick = { viewModel.transcribe() }, enabled = uiState.selectedUri != null && !uiState.isTranscribing && uiState.isModelReady) {
+                            Text(if (uiState.isTranscribing) "Transcribing..." else "Start Transcription")
+                        }
+                        Button(onClick = { viewModel.toggleTranslation() }, enabled = uiState.originalTranscript.isNotBlank() && !uiState.isTranscribing && !uiState.isTranslating) {
+                            Text(if (uiState.isTranslatedView) "Show Original" else if (uiState.isTranslating) "Translating..." else "Translate")
+                        }
                     }
 
                     Box(

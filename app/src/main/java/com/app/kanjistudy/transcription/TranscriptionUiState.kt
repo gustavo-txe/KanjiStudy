@@ -14,5 +14,9 @@ data class TranscriptionUiState(
     val clipEndMs: Long = 0L,
     val isTranscribing: Boolean = false,
     val transcript: String = "",
+    val originalTranscript: String = "",
+    val translatedTranscript: String = "",
+    val isTranslatedView: Boolean = false,
+    val isTranslating: Boolean = false,
     val error: String? = null
 )

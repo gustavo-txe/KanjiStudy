@@ -119,6 +119,7 @@ dependencies {
     // ML Kit Text Recognition
     implementation ("com.google.mlkit:text-recognition:16.0.1")
     implementation ("com.google.mlkit:text-recognition-japanese:16.0.1")
+    implementation("com.google.mlkit:translate:17.0.3")
 
     implementation("androidx.camera:camera-mlkit-vision:1.4.0")
     
