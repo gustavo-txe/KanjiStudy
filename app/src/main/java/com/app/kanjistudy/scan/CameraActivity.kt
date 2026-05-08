@@ -78,18 +78,16 @@ import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
 fun ScanScreen(
     viewModel: ScanViewModel = hiltViewModel(),
     onboardingManager: OnboardingManager,
-    onOpenTranscription: () -> Unit
 ) {
     CameraPermission {
-        CameraScreen(viewModel, onboardingManager, onOpenTranscription)    }
+        CameraScreen(viewModel, onboardingManager)    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CameraScreen(
     viewModel: ScanViewModel = hiltViewModel(),
-    onboardingManager: OnboardingManager,
-    onOpenTranscription: () -> Unit
+    onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val customTab = remember { CustomTab() }
@@ -183,15 +181,6 @@ fun CameraScreen(
                     textAlign = TextAlign.Center
                 )
             }
-        }
-
-        Button(
-            onClick = onOpenTranscription,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(24.dp)
-        ) {
-            Text("Open Transcription")
         }
 
         FloatingActionButton(
