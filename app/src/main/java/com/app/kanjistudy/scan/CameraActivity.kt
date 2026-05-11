@@ -2,6 +2,7 @@ package com.app.kanjistudy.scan
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
 import android.widget.Toast
@@ -72,6 +73,7 @@ import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
+import kotlin.jvm.java
 
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -181,6 +183,15 @@ fun CameraScreen(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+
+        Button(
+            onClick = { context.startActivity(Intent(context, ImageKanjiScanActivity::class.java)) },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(24.dp)
+        ) {
+            Text("Scan image")
         }
 
         FloatingActionButton(
