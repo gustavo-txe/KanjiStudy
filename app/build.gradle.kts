@@ -15,10 +15,10 @@ android {
 
     defaultConfig {
         applicationId = "com.app.kanjistudy"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.5"
+        versionCode = 9
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -115,6 +115,7 @@ dependencies {
     // ML Kit Text Recognition
     implementation ("com.google.mlkit:text-recognition:16.0.1")
     implementation ("com.google.mlkit:text-recognition-japanese:16.0.1")
+    implementation("com.google.mlkit:translate:17.0.3")
 
     implementation("androidx.camera:camera-mlkit-vision:1.4.0")
     

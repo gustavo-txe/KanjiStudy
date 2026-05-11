@@ -62,6 +62,10 @@ class KanjiRepository @Inject constructor(
 
     fun getLearnedKanjis(): Flow<List<KanjiData>> = kanjiDao.getLearnedKanjis()
 
+    suspend fun isKanjiDownloadComplete(): Boolean = withContext(Dispatchers.IO) {
+        kanjiDao.countKanjis() >= MIN_KANJI_COUNT
+    }
+
     private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiData? {
         repeat(MAX_RETRIES) { attempt ->
             runCatching {

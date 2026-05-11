@@ -1,5 +1,7 @@
 package com.app.kanjistudy.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -17,9 +19,12 @@ import com.app.kanjistudy.home.kanjis.KanjiListScreen
 import com.app.kanjistudy.learned.LearnedScreen
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.scan.ScanScreen
+import com.app.kanjistudy.onboarding.OnboardingManager
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    onboardingManager: OnboardingManager
+) {
     val navController = rememberNavController()
     val currentRoute =
         navController.currentBackStackEntryAsState().value?.destination?.route
@@ -50,13 +55,13 @@ fun AppNavigation() {
             startDestination = Screens.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screens.Learned.route) { LearnedScreen() }
-            composable(Screens.Home.route) { KanjiListScreen() }
-            composable(Screens.Scan.route) { ScanScreen() }
+            composable(Screens.Learned.route) { LearnedScreen(onboardingManager = onboardingManager) }
+            composable(Screens.Home.route) { KanjiListScreen(onboardingManager = onboardingManager) }
+            composable(Screens.Scan.route) { ScanScreen(onboardingManager = onboardingManager) }
+
         }
     }
 }
-
 
 @Composable
 fun AppBottomBar(

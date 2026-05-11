@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import com.app.kanjistudy.onboarding.OnboardingManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,7 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,11 +49,14 @@ import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import com.app.kanjistudy.home.kanjis.components.KanjiLoadingScreen
 import com.app.kanjistudy.home.kanjis.components.SearchBarKanji
+import com.app.kanjistudy.onboarding.OnboardingHighlight
+import com.app.kanjistudy.onboarding.OnboardingOverlay
 import kotlin.collections.forEach
 
 @Composable
 fun KanjiListScreen(
     viewModel: KanjiViewModel = hiltViewModel(),
+    onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -67,6 +74,8 @@ fun KanjiListScreen(
     }
 
     var dialogType by remember { mutableStateOf<KanjiDialog?>(null) }
+
+    var showHomeHint by remember { mutableStateOf(onboardingManager.shouldShowHint("home")) }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -92,7 +101,10 @@ fun KanjiListScreen(
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
-        KanjiLoadingScreen(viewModel)
+        KanjiLoadingScreen(
+            viewModel = viewModel,
+            modifier = Modifier
+        )
 
         SearchBarKanji(onSearch = viewModel::onQueryChange)
 
@@ -260,6 +272,17 @@ fun KanjiListScreen(
             }
 
             null -> Unit
+        }
+        if (showHomeHint) {
+            OnboardingOverlay(
+                message = "Welcome to Kanji Scanner!\n\n"+
+                        "This quick tutorial will guide you through the app’s features.\n\n"+
+                "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.",
+                onDismiss = {
+                    onboardingManager.markHintShown("home")
+                    showHomeHint = false
+                }
+            )
         }
     }
 }
