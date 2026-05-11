@@ -6,11 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.kanjistudy.scan.usecase.ScanKanjiFromGalleryUseCase
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,6 +26,22 @@ class ImageKanjiScanViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ImageKanjiScanUiState())
     val uiState: StateFlow<ImageKanjiScanUiState> = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<ImageKanjiScanUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    val documentScannerOptions = GmsDocumentScannerOptions.Builder()
+        .setGalleryImportAllowed(true)
+        .setPageLimit(1)
+        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+        .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+        .build()
+
+    fun onScanImageClick() {
+        viewModelScope.launch {
+            _uiEvent.emit(ImageKanjiScanUiEvent.LaunchDocumentScanner)
+        }
+    }
 
     fun onImageSelected(uri: Uri) {
         _uiState.update {
@@ -66,4 +85,8 @@ class ImageKanjiScanViewModel @Inject constructor(
             }
         }
     }
+}
+
+sealed interface ImageKanjiScanUiEvent {
+    data object LaunchDocumentScanner : ImageKanjiScanUiEvent
 }

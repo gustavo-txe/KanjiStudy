@@ -72,7 +72,7 @@ fun OnboardingOverlay(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = textBottomPadding)
         ) {
-            Text("Got it", color = Color.White)
+            Text("\n\nGot it", color = Color.White)
         }
     }
 }

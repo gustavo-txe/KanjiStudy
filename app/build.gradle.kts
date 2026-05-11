@@ -116,7 +116,7 @@ dependencies {
     implementation ("com.google.mlkit:text-recognition:16.0.1")
     implementation ("com.google.mlkit:text-recognition-japanese:16.0.1")
     implementation("com.google.mlkit:translate:17.0.3")
-
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
     implementation("androidx.camera:camera-mlkit-vision:1.4.0")
     
     implementation("com.google.guava:guava:32.1.3-android")
