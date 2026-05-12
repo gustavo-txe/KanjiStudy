@@ -88,6 +88,13 @@ fun KanjiListScreen(
         }
     }
 
+    LaunchedEffect(uiState.isLoading, showHomeHint) {
+        if (!uiState.isLoading && showHomeHint) {
+            onboardingManager.markHintShown("home")
+            showHomeHint = false
+        }
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "infiniteColor")
 
     val animatedColor by infiniteTransition.animateColor(
@@ -277,7 +284,7 @@ fun KanjiListScreen(
             OnboardingOverlay(
                 message = "Welcome to Kanji Scanner!\n\n"+
                         "This quick tutorial will guide you through the app’s features.\n\n"+
-                "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.",
+                "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.\n\n",
                 onDismiss = {
                     onboardingManager.markHintShown("home")
                     showHomeHint = false
