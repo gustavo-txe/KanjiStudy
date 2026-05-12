@@ -40,6 +40,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,15 +55,19 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.kanjistudy.onboarding.OnboardingManager
+import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 
 @Composable
-fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
+fun ImageScanScreen(onboardingManager: OnboardingManager,
+                    viewModel: ImageScanViewModel = hiltViewModel(),) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val documentScannerOptions = viewModel.documentScannerOptions
     val configuration = LocalConfiguration.current
     val imageSize = (configuration.screenWidthDp.dp - 40.dp).coerceIn(220.dp, 520.dp)
+    var showImageScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("image_scan")) }
 
     val scannerLauncher = rememberLauncherForActivityResult(StartIntentSenderForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -86,15 +93,16 @@ fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                 IconButton(onClick = { (context as? Activity)?.finish() }) {
                     Icon(
@@ -129,15 +137,24 @@ fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
                         .fillMaxSize()
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
-                        .clickable(enabled = !uiState.isLoading, onClick = viewModel::onScanImageClick),
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant,
+                            RoundedCornerShape(20.dp)
+                        )
+                        .clickable(
+                            enabled = !uiState.isLoading,
+                            onClick = viewModel::onScanImageClick
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (uiState.selectedImageUri != null) {
                         AndroidView(
                             modifier = Modifier.fillMaxSize(),
                             factory = { androidContext ->
-                                ImageView(androidContext).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
+                                ImageView(androidContext).apply {
+                                    scaleType = ImageView.ScaleType.CENTER_CROP
+                                }
                             },
                             update = { it.setImageURI(uiState.selectedImageUri) },
                         )
@@ -197,7 +214,10 @@ fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
             Spacer(modifier = Modifier.height(12.dp))
 
             if (uiState.isLoading) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     Text("Analyzing image...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -245,6 +265,16 @@ fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+            }
+        }
+            if (showImageScanHint) {
+                OnboardingOverlay(
+                    message = "Image Scanner\n\nUse this screen to scan kanji from photos and documents.\n\nTap the large card to open the scanner. You can choose an image from your device or scan a document page, then crop and adjust before analysis.\n\nAfter scanning, recognized kanji appear below. Use retry to analyze again or remove image to start over.",
+                    onDismiss = {
+                        onboardingManager.markHintShown("image_scan")
+                        showImageScanHint = false
+                    },
+                )
             }
         }
     }
