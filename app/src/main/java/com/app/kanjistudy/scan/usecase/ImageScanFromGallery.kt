@@ -4,7 +4,7 @@ import com.app.kanjistudy.scan.recognizer.TextRecognizer
 import com.google.mlkit.vision.common.InputImage
 import javax.inject.Inject
 
-class ScanKanjiFromGalleryUseCase @Inject constructor(
+class ImageScanFromGallery @Inject constructor(
     private val recognizer: TextRecognizer,
 ) {
     suspend operator fun invoke(image: InputImage): String {

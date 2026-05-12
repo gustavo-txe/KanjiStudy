@@ -2,12 +2,9 @@ package com.app.kanjistudy.scan
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
-import android.os.Bundle
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.compose.foundation.background
@@ -55,26 +52,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.kanjistudy.theme.KanjiStudyTheme
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
-import dagger.hilt.android.AndroidEntryPoint
-
-@AndroidEntryPoint
-class ImageKanjiScanActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            KanjiStudyTheme {
-                ImageKanjiScanScreen()
-            }
-        }
-    }
-}
 
 @Composable
-private fun ImageKanjiScanScreen(viewModel: ImageKanjiScanViewModel = hiltViewModel()) {
+fun ImageScanScreen(viewModel: ImageScanViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val documentScannerOptions = viewModel.documentScannerOptions
     val configuration = LocalConfiguration.current

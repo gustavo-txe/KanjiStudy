@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.kanjistudy.scan.usecase.ScanKanjiFromGalleryUseCase
+import com.app.kanjistudy.scan.usecase.ImageScanFromGallery
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,13 +19,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ImageKanjiScanViewModel @Inject constructor(
+class ImageScanViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
-    private val scanKanjiFromGalleryUseCase: ScanKanjiFromGalleryUseCase,
+    private val imageScanFromGallery: ImageScanFromGallery,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ImageKanjiScanUiState())
-    val uiState: StateFlow<ImageKanjiScanUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(ImageScanUiState())
+    val uiState: StateFlow<ImageScanUiState> = _uiState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<ImageKanjiScanUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -59,7 +59,7 @@ class ImageKanjiScanViewModel @Inject constructor(
     }
 
     fun removeImage() {
-        _uiState.value = ImageKanjiScanUiState()
+        _uiState.value = ImageScanUiState()
     }
 
     private fun scanImage() {
@@ -69,7 +69,7 @@ class ImageKanjiScanViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, message = null, recognizedKanji = "") }
             try {
                 val inputImage = InputImage.fromFilePath(applicationContext, imageUri)
-                val kanji = scanKanjiFromGalleryUseCase(inputImage)
+                val kanji = imageScanFromGallery(inputImage)
 
                 _uiState.update {
                     it.copy(

@@ -17,12 +17,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ScanViewModel @Inject constructor(
+class CameraScanViewModel @Inject constructor(
     private val scanKanjiUseCase: ScanKanjiUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ScanUiState())
-    val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(CameraScanUiState())
+    val uiState: StateFlow<CameraScanUiState> = _uiState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<ScanUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()

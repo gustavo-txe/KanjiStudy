@@ -43,14 +43,12 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInParent
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
@@ -59,7 +57,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -78,7 +75,7 @@ import kotlin.jvm.java
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun ScanScreen(
-    viewModel: ScanViewModel = hiltViewModel(),
+    viewModel: CameraScanViewModel = hiltViewModel(),
     onboardingManager: OnboardingManager,
 ) {
     CameraPermission {
@@ -88,7 +85,7 @@ fun ScanScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CameraScreen(
-    viewModel: ScanViewModel = hiltViewModel(),
+    viewModel: CameraScanViewModel = hiltViewModel(),
     onboardingManager: OnboardingManager
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -261,7 +258,7 @@ fun CameraScreen(
 
 @Composable
 fun CameraPreview(
-    viewModel: ScanViewModel
+    viewModel: CameraScanViewModel
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
