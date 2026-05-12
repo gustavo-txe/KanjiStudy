@@ -13,6 +13,13 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -53,6 +60,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -66,6 +77,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
@@ -182,13 +197,61 @@ fun CameraScreen(
             }
         }
 
-        Button(
+        val imageScanGradientTransition = rememberInfiniteTransition(label = "image_scan_gradient_transition")
+        val shimmerProgress by imageScanGradientTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = keyframes {
+                    durationMillis = 20000
+                    0f at 0 with LinearEasing
+                    1f at 10000 with LinearEasing
+                    0f at 20000 with LinearEasing
+                },
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "image_scan_shimmer_progress"
+        )
+        val gradientShift = -320f + (640f * shimmerProgress)
+
+        val imageScanGradient = Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF102A6B),
+                Color(0xFF003AE7),
+                Color(0xFF135D96),
+                Color(0xFF0F4891),
+                Color(0xFF0730C4)
+            ),
+            start = Offset(gradientShift, 0f),
+            end = Offset(gradientShift + 680f, 0f)
+        )
+        FilledTonalButton(
             onClick = { context.startActivity(Intent(context, ImageKanjiScanActivity::class.java)) },
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(24.dp)
+                .padding(20.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(imageScanGradient)
+                .defaultMinSize(minHeight = 52.dp),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = Color.White
+            )
         ) {
-            Text("Scan image")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_camera),
+                    contentDescription = null,
+                    tint = Color.White
+                )
+                Text(
+                    text = "Scan Image",
+                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = Color.White                )
+            }
         }
 
         FloatingActionButton(
