@@ -111,7 +111,9 @@ fun CameraScreen(
     val context = LocalContext.current
     val density = LocalDensity.current
 
+    var optionsKanji by remember { mutableStateOf<Char?>(null) }
     var dialogKanji by remember { mutableStateOf<Char?>(null) }
+    var detailsKanji by remember { mutableStateOf<com.app.kanjistudy.data.model.KanjiData?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
 
@@ -123,8 +125,6 @@ fun CameraScreen(
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                is ScanUiEvent.ShowGoogleDialog -> dialogKanji = event.kanji
-
                 is ScanUiEvent.CopyKanji -> {
                     clipboardManager.setText(
                         AnnotatedString(event.kanji.toString())
@@ -184,15 +184,14 @@ fun CameraScreen(
                         .padding(2.dp)
                         .combinedClickable(
                             onClick = {
-                                viewModel.onKanjiClick(char)
-                            },
+                                optionsKanji = char                            },
                             onLongClick = {
                                 viewModel.onKanjiLongClick(char)
                             }
                         )
                         .fillMaxWidth(),
                     fontSize = 50.sp,
-                    color = Color.White,
+                    color = if (uiState.learnedKanjis.contains(char)) Color(0xFF4CAF50) else Color.White,
                     textAlign = TextAlign.Center
                 )
             }
@@ -291,6 +290,40 @@ fun CameraScreen(
         }
     }
 
+    optionsKanji?.let { kanji ->
+        val joyoKanji = uiState.recognizedJoyoKanjis[kanji]
+        AlertDialog(
+            onDismissRequest = { optionsKanji = null },
+            title = {
+                Text(
+                    text = "$kanji",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontSize = 100.sp)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    dialogKanji = kanji
+                    optionsKanji = null
+                }) { Text("Search on Google") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        viewModel.onKanjiLongClick(kanji)
+                        optionsKanji = null
+                    }) { Text("Copy") }
+                    if (joyoKanji != null) {
+                        TextButton(onClick = {
+                            detailsKanji = joyoKanji
+                            optionsKanji = null
+                        }) { Text("Details") }
+                    }
+                }
+            }
+        )
+    }
+
     dialogKanji?.let { kanji ->
         AlertDialog(
             onDismissRequest = { dialogKanji = null },
@@ -317,6 +350,43 @@ fun CameraScreen(
                 }
             }
         )
+    }
+
+    detailsKanji?.let { kanji ->
+        AlertDialog(
+            onDismissRequest = { detailsKanji = null },
+            title = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
+                    Text(
+                        text = if (kanji.isLearned) "Learned" else "Not learned",
+                        color = if (kanji.isLearned) Color(0xFF2E7D32) else Color(0xFFB00020)
+                    )
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = kanji.kanji, fontSize = 96.sp, lineHeight = 98.sp)
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceAround) {
+                        DetailColumn(title = "Kun'yomi:", items = kanji.kunReadings)
+                        DetailColumn(title = "On'yomi:", items = kanji.onReadings)
+                        DetailColumn(title = "Meanings:", items = kanji.meanings)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { detailsKanji = null }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun DetailColumn(title: String, items: List<String>) {
+    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+        Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        items.forEach { Text(text = it, fontSize = 13.sp) }
     }
 }
 

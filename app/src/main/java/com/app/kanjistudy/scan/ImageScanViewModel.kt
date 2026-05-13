@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.kanjistudy.data.repository.KanjiRepository
 import com.app.kanjistudy.scan.usecase.ImageScanFromGallery
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class ImageScanViewModel @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
     private val imageScanFromGallery: ImageScanFromGallery,
+    private val kanjiRepository: KanjiRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImageScanUiState())
@@ -78,11 +80,25 @@ class ImageScanViewModel @Inject constructor(
                         message = if (kanji.isBlank()) "No kanji was identified." else "Identified kanji:",
                     )
                 }
+                refreshRecognizedMetadata(kanji)
             } catch (_: Exception) {
                 _uiState.update {
                     it.copy(isLoading = false, message = "Could not process this image. Please try another one.")
                 }
             }
+        }
+    }
+    private suspend fun refreshRecognizedMetadata(recognizedText: String) {
+        val uniqueKanjis = recognizedText.toSet()
+        val joyoKanjis = kanjiRepository.getKanjisByChars(uniqueKanjis)
+        val joyoMap = joyoKanjis.associateBy { it.kanji.first() }
+        val learned = joyoKanjis.filter { it.isLearned }.mapTo(mutableSetOf()) { it.kanji.first() }
+
+        _uiState.update {
+            it.copy(
+                recognizedJoyoKanjis = joyoMap,
+                learnedKanjis = learned
+            )
         }
     }
 }

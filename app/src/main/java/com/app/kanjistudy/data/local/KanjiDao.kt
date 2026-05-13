@@ -31,4 +31,7 @@ interface KanjiDao {
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
      fun getLearnedKanjis(): Flow<List<KanjiData>>
 
+    @Query("SELECT * FROM kanji_table WHERE kanji IN (:kanjis)")
+    suspend fun getKanjisByChars(kanjis: List<String>): List<KanjiData>
+
 }

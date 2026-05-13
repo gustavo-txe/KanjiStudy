@@ -62,6 +62,11 @@ class KanjiRepository @Inject constructor(
 
     fun getLearnedKanjis(): Flow<List<KanjiData>> = kanjiDao.getLearnedKanjis()
 
+    suspend fun getKanjisByChars(kanjis: Set<Char>): List<KanjiData> = withContext(Dispatchers.IO) {
+        if (kanjis.isEmpty()) return@withContext emptyList()
+        kanjiDao.getKanjisByChars(kanjis.map { it.toString() })
+    }
+
     suspend fun isKanjiDownloadComplete(): Boolean = withContext(Dispatchers.IO) {
         kanjiDao.countKanjis() >= MIN_KANJI_COUNT
     }
