@@ -154,7 +154,7 @@ fun CameraScreen(
                 Text(
                     text = "Click on a kanji for more details\nPause the camera for review",
                     modifier = Modifier
-                        .padding(top = 16.dp)
+                        .padding(top = 24.dp)
                         .onGloballyPositioned { coordinates ->
                             rect = coordinates.boundsInParent()
 
@@ -174,7 +174,8 @@ fun CameraScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(450.dp)
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .padding(top = 8.dp, bottom = 8.dp),
         ) {
             items(uiState.kanji.toList()) { char ->
                 Text(

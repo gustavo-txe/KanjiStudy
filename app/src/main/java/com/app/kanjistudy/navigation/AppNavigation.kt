@@ -1,7 +1,11 @@
 package com.app.kanjistudy.navigation
 
-import android.os.Build
-import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -21,6 +25,19 @@ import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.scan.ScanScreen
 import com.app.kanjistudy.onboarding.OnboardingManager
 
+private const val TRANSITION_DURATION_MS = 420
+private const val TRANSITION_FADE_DURATION_MS = 280
+
+private fun screenIndex(route: String?): Int = when (route) {
+    Screens.Learned.route -> 0
+    Screens.Home.route -> 1
+    Screens.Scan.route -> 2
+    else -> 1
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isForwardNavigation(): Boolean =
+    screenIndex(targetState.destination.route) > screenIndex(initialState.destination.route)
+
 @Composable
 fun AppNavigation(
     onboardingManager: OnboardingManager
@@ -29,9 +46,11 @@ fun AppNavigation(
     val currentRoute =
         navController.currentBackStackEntryAsState().value?.destination?.route
 
+    val routesWithTopBar = setOf(Screens.Learned.route, Screens.Home.route, Screens.Scan.route)
+
     Scaffold(
         topBar = {
-            if (currentRoute == Screens.Home.route) {
+            if (currentRoute in routesWithTopBar) {
                 HomeTopBar()
             }
         },
@@ -53,7 +72,75 @@ fun AppNavigation(
         NavHost(
             navController = navController,
             startDestination = Screens.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding),
+            enterTransition = {
+                val slideDirection = if (isForwardNavigation()) {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Right
+                }
+
+                slideIntoContainer(
+                    towards = slideDirection,
+                    animationSpec = tween(
+                        durationMillis = TRANSITION_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(durationMillis = TRANSITION_FADE_DURATION_MS)
+                )
+            },
+            exitTransition = {
+                val slideDirection = if (isForwardNavigation()) {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Right
+                }
+
+                slideOutOfContainer(
+                    towards = slideDirection,
+                    animationSpec = tween(
+                        durationMillis = TRANSITION_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(durationMillis = TRANSITION_FADE_DURATION_MS)
+                )
+            },
+            popEnterTransition = {
+                val slideDirection = if (isForwardNavigation()) {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Right
+                }
+
+                slideIntoContainer(
+                    towards = slideDirection,
+                    animationSpec = tween(
+                        durationMillis = TRANSITION_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(durationMillis = TRANSITION_FADE_DURATION_MS)
+                )
+            },
+            popExitTransition = {
+                val slideDirection = if (isForwardNavigation()) {
+                    AnimatedContentTransitionScope.SlideDirection.Left
+                } else {
+                    AnimatedContentTransitionScope.SlideDirection.Right
+                }
+
+                slideOutOfContainer(
+                    towards = slideDirection,
+                    animationSpec = tween(
+                        durationMillis = TRANSITION_DURATION_MS,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(durationMillis = TRANSITION_FADE_DURATION_MS)
+                )
+            }
         ) {
             composable(Screens.Learned.route) { LearnedScreen(onboardingManager = onboardingManager) }
             composable(Screens.Home.route) { KanjiListScreen(onboardingManager = onboardingManager) }
