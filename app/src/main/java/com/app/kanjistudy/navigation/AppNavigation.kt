@@ -40,8 +40,9 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isForwardNavigatio
 
 @Composable
 fun AppNavigation(
-    onboardingManager: OnboardingManager
-) {
+    onboardingManager: OnboardingManager,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit) {
     val navController = rememberNavController()
     val currentRoute =
         navController.currentBackStackEntryAsState().value?.destination?.route
@@ -51,8 +52,10 @@ fun AppNavigation(
     Scaffold(
         topBar = {
             if (currentRoute in routesWithTopBar) {
-                HomeTopBar()
-            }
+                HomeTopBar(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChanged = onThemeChanged
+                )            }
         },
         bottomBar = {
             AppBottomBar(

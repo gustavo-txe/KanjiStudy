@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.usecase.CustomTab
@@ -73,8 +74,12 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ImageScanScreen(onboardingManager: OnboardingManager,
-                    viewModel: ImageScanViewModel = hiltViewModel(),) {
+fun ImageScanScreen(
+    onboardingManager: OnboardingManager,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit,
+    viewModel: ImageScanViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val documentScannerOptions = viewModel.documentScannerOptions
     val configuration = LocalConfiguration.current
@@ -121,32 +126,23 @@ fun ImageScanScreen(onboardingManager: OnboardingManager,
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                IconButton(onClick = { (context as? Activity)?.finish() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Go back",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
+                HomeTopBar(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChanged = onThemeChanged,
+                    showBackButton = true,
+                    onBackClick = { (context as? Activity)?.finish() }
+                )
+
 
             Text(
-                text = "Image Kanji Scanner",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Text(
                 text = "Scan an image or document to detect Kanji characters.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+                fontSize = 16.sp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 12.dp),
+                    .padding(14.dp),
             )
 
             ElevatedCard(modifier = Modifier.size(imageSize)) {

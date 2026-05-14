@@ -5,13 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.app.kanjistudy.navigation.AppNavigation
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.review.InAppReviewManager
 import com.app.kanjistudy.theme.KanjiStudyTheme
+import com.app.kanjistudy.theme.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -62,7 +65,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KanjiStudyTheme {
-                AppNavigation(onboardingManager = onboardingManager)
+                val themeViewModel: ThemeViewModel = hiltViewModel()
+                val isDarkTheme = themeViewModel.isDarkTheme.collectAsStateWithLifecycle()
+
+                KanjiStudyTheme(darkTheme = isDarkTheme.value) {
+                    AppNavigation(
+                        onboardingManager = onboardingManager,
+                        isDarkTheme = isDarkTheme.value,
+                        onThemeChanged = themeViewModel::onThemeChanged
+                    )
+                }
             }
         }
     }
