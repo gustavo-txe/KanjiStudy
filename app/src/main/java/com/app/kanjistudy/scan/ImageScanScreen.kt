@@ -81,6 +81,7 @@ fun ImageScanScreen(onboardingManager: OnboardingManager,
     val customTab = remember { CustomTab() }
     val clipboardManager = LocalClipboardManager.current
     val imageSize = (configuration.screenWidthDp.dp - 40.dp).coerceIn(220.dp, 520.dp)
+    var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
     var optionsKanji by remember { mutableStateOf<Char?>(null) }
     var googleKanji by remember { mutableStateOf<Char?>(null) }
     var detailsKanji by remember { mutableStateOf<com.app.kanjistudy.data.model.KanjiData?>(null) }
@@ -307,15 +308,28 @@ fun ImageScanScreen(onboardingManager: OnboardingManager,
             }
                 optionsKanji?.let { kanji ->
                     val joyoKanji = uiState.recognizedJoyoKanjis[kanji]
+                    val isLearned = uiState.learnedKanjis.contains(kanji)
                     AlertDialog(
                         onDismissRequest = { optionsKanji = null },
                         title = {
-                            Text(
-                                text = "$kanji",
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                fontSize = 100.sp)
-                                },
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    StatusToggleIcon(
+                                        isLearned = isLearned,
+                                        onToggle = { toggleLearnedKanji = kanji }
+                                    )
+                                }
+                                Text(
+                                    text = "$kanji",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 100.sp
+                                )
+                            }
+                        },
                         confirmButton = {
                             TextButton(onClick = {
                                 googleKanji = kanji
@@ -355,10 +369,16 @@ fun ImageScanScreen(onboardingManager: OnboardingManager,
                 }
 
                 detailsKanji?.let { kanji ->
+                    val isLearned = uiState.learnedKanjis.contains(kanji.kanji.first())
                     AlertDialog(
                         onDismissRequest = { detailsKanji = null },
-                        title = { Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { Text(if (kanji.isLearned) "Learned" else "Not learned") } },
-                        text = {
+                        title = {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                StatusToggleIcon(
+                                    isLearned = isLearned,
+                                    onToggle = { toggleLearnedKanji = kanji.kanji.first() }                                )
+                            }
+                        },                        text = {
                             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(text = kanji.kanji, fontSize = 96.sp, lineHeight = 98.sp)
                                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
@@ -371,7 +391,32 @@ fun ImageScanScreen(onboardingManager: OnboardingManager,
                         confirmButton = { TextButton(onClick = { detailsKanji = null }) { Text("Close") } }
                     )
                 }
+                toggleLearnedKanji?.let { kanji ->
+                    val isLearned = uiState.learnedKanjis.contains(kanji)
+                    AlertDialog(
+                        onDismissRequest = { toggleLearnedKanji = null },
+                        title = {
+                            Text(if (isLearned) "Remove learned kanji?" else "Add kanji?")
+                        },
+                        text = {
+                            Text(
+                                if (isLearned) "Would you like to remove $kanji from learned?"
+                                else "Would you like to add $kanji as learned?"
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                viewModel.toggleLearnedKanji(kanji)
+                                toggleLearnedKanji = null
+                            }) { Text("Yes") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { toggleLearnedKanji = null }) { Text("No") }
+                        }
+                    )
+                }
         }
+
             if (showImageScanHint) {
                 OnboardingOverlay(
                     message = "Image Scanner\n\nUse this screen to scan kanji from photos and documents.\n\nTap the large card to open the scanner. You can choose an image from your device or scan a document page, then crop and adjust before analysis.\n\nAfter scanning, recognized kanji appear below. Use retry to analyze again or remove image to start over.",

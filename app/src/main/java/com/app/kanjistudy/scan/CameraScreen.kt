@@ -114,6 +114,7 @@ fun CameraScreen(
     var optionsKanji by remember { mutableStateOf<Char?>(null) }
     var dialogKanji by remember { mutableStateOf<Char?>(null) }
     var detailsKanji by remember { mutableStateOf<com.app.kanjistudy.data.model.KanjiData?>(null) }
+    var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
 
@@ -292,14 +293,27 @@ fun CameraScreen(
 
     optionsKanji?.let { kanji ->
         val joyoKanji = uiState.recognizedJoyoKanjis[kanji]
+        val isLearned = uiState.learnedKanjis.contains(kanji)
         AlertDialog(
             onDismissRequest = { optionsKanji = null },
             title = {
-                Text(
-                    text = "$kanji",
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    fontSize = 100.sp)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                    ) {
+                        StatusToggleIcon(
+                            isLearned = isLearned,
+                            onToggle = { toggleLearnedKanji = kanji }
+                        )
+                    }
+                    Text(
+                        text = "$kanji",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 100.sp
+                    )
+                }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -353,14 +367,14 @@ fun CameraScreen(
     }
 
     detailsKanji?.let { kanji ->
+        val isLearned = uiState.learnedKanjis.contains(kanji.kanji.first())
         AlertDialog(
             onDismissRequest = { detailsKanji = null },
             title = {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
-                    Text(
-                        text = if (kanji.isLearned) "Learned" else "Not learned",
-                        color = if (kanji.isLearned) Color(0xFF2E7D32) else Color(0xFFB00020)
-                    )
+                    StatusToggleIcon(
+                        isLearned = isLearned,
+                        onToggle = { toggleLearnedKanji = kanji.kanji.first() }                    )
                 }
             },
             text = {
@@ -377,6 +391,30 @@ fun CameraScreen(
                 TextButton(onClick = { detailsKanji = null }) {
                     Text("Close")
                 }
+            }
+        )
+    }
+    toggleLearnedKanji?.let { kanji ->
+        val isLearned = uiState.learnedKanjis.contains(kanji)
+        AlertDialog(
+            onDismissRequest = { toggleLearnedKanji = null },
+            title = {
+                Text(if (isLearned) "Remove learned kanji?" else "Add kanji?")
+            },
+            text = {
+                Text(
+                    if (isLearned) "Would you like to remove $kanji from learned?"
+                    else "Would you like to add $kanji as learned?"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.toggleLearnedKanji(kanji)
+                    toggleLearnedKanji = null
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { toggleLearnedKanji = null }) { Text("No") }
             }
         )
     }

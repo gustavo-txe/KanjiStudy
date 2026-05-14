@@ -74,6 +74,14 @@ class CameraScanViewModel @Inject constructor(
         }
     }
 
+    fun toggleLearnedKanji(kanji: Char) {
+        viewModelScope.launch {
+            kanjiRepository.toggleLearnedKanji(kanji.toString())
+            refreshRecognizedMetadata(_uiState.value.kanji)
+        }
+    }
+
+
     private suspend fun refreshRecognizedMetadata(recognizedText: String) {
         val uniqueKanjis = recognizedText.toSet()
         val joyoKanjis = kanjiRepository.getKanjisByChars(uniqueKanjis)

@@ -64,6 +64,13 @@ class ImageScanViewModel @Inject constructor(
         _uiState.value = ImageScanUiState()
     }
 
+    fun toggleLearnedKanji(kanji: Char) {
+        viewModelScope.launch {
+            kanjiRepository.toggleLearnedKanji(kanji.toString())
+            refreshRecognizedMetadata(_uiState.value.recognizedKanji)
+        }
+    }
+
     private fun scanImage() {
         val imageUri = _uiState.value.selectedImageUri ?: return
 
