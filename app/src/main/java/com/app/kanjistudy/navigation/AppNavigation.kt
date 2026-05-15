@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.app.kanjistudy.help.HelpScreen
 import com.app.kanjistudy.home.kanjis.KanjiListScreen
 import com.app.kanjistudy.learned.LearnedScreen
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
@@ -47,15 +48,17 @@ fun AppNavigation(
     val currentRoute =
         navController.currentBackStackEntryAsState().value?.destination?.route
 
-    val routesWithTopBar = setOf(Screens.Learned.route, Screens.Home.route, Screens.Scan.route)
-
+    val routesWithTopBar = setOf(Screens.Learned.route, Screens.Home.route, Screens.Scan.route, Screens.Help.route)
     Scaffold(
         topBar = {
             if (currentRoute in routesWithTopBar) {
                 HomeTopBar(
                     isDarkTheme = isDarkTheme,
-                    onThemeChanged = onThemeChanged
-                )            }
+                    onThemeChanged = onThemeChanged,
+                    onHelpClick = { navController.navigate(Screens.Help.route) },
+                    showBackButton = currentRoute == Screens.Help.route,
+                    onBackClick = { navController.popBackStack() }                )
+            }
         },
         bottomBar = {
             AppBottomBar(
@@ -148,6 +151,7 @@ fun AppNavigation(
             composable(Screens.Learned.route) { LearnedScreen(onboardingManager = onboardingManager) }
             composable(Screens.Home.route) { KanjiListScreen(onboardingManager = onboardingManager) }
             composable(Screens.Scan.route) { ScanScreen(onboardingManager = onboardingManager) }
+            composable(Screens.Help.route) { HelpScreen() }
 
         }
     }

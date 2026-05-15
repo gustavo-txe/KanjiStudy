@@ -2,6 +2,7 @@ package com.app.kanjistudy.scan
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.content.Intent
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -65,7 +66,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.rememberNavController
+import com.app.kanjistudy.help.HelpActivity
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
+import com.app.kanjistudy.navigation.Screens
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.usecase.CustomTab
@@ -100,6 +104,7 @@ fun ImageScanScreen(
     }
 
     val context = LocalContext.current
+    val navController = rememberNavController()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
@@ -129,6 +134,10 @@ fun ImageScanScreen(
                 HomeTopBar(
                     isDarkTheme = isDarkTheme,
                     onThemeChanged = onThemeChanged,
+                    onHelpClick = {
+                        context.startActivity(Intent(
+                            context, HelpActivity::class.java))
+                    },
                     showBackButton = true,
                     onBackClick = { (context as? Activity)?.finish() }
                 )

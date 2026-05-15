@@ -52,6 +52,7 @@ import com.app.kanjistudy.R
 fun HomeTopBar(
     isDarkTheme: Boolean,
     onThemeChanged: (Boolean) -> Unit,
+    onHelpClick: () -> Unit,
     showBackButton: Boolean = false,
     onBackClick: (() -> Unit)? = null
 ) {
@@ -141,6 +142,14 @@ fun HomeTopBar(
                         )
                     },
                     onClick = { onThemeChanged(!isDarkTheme) }
+                )
+
+                DropdownMenuItem(
+                    text = { Text("Help") },
+                    onClick = {
+                        expanded = false
+                        onHelpClick()
+                    }
                 )
 
                 DropdownMenuItem(
