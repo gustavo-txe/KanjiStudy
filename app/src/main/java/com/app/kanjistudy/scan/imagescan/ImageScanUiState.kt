@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.imagescan
 
 import android.net.Uri
 import com.app.kanjistudy.data.model.KanjiData

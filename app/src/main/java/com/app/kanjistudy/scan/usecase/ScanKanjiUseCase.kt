@@ -18,6 +18,7 @@ class ScanKanjiUseCase @Inject constructor(
 
         val now = System.currentTimeMillis()
         if (now - lastUpdateTime < throttleMs) return null
+        lastUpdateTime = now
 
         val text = recognizer.recognize(image)
 
@@ -30,7 +31,6 @@ class ScanKanjiUseCase @Inject constructor(
             return null
         }
 
-        lastUpdateTime = now
         return kanjisOnly
     }
 

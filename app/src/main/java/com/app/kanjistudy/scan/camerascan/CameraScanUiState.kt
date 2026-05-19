@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.camerascan
 
 import com.app.kanjistudy.data.model.KanjiData
 

@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.camerascan
 
 import android.annotation.SuppressLint
 import androidx.camera.core.ImageProxy
@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,6 +30,8 @@ class CameraScanViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<ScanUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    private val isProcessingFrame = AtomicBoolean(false)
+
     fun togglePause() {
         _uiState.update { it.copy(isPaused = !it.isPaused) }
     }
@@ -39,7 +42,12 @@ class CameraScanViewModel @Inject constructor(
             imageProxy.close()
             return
         }
+        if (!isProcessingFrame.compareAndSet(false, true)) {
+            imageProxy.close()
+            return
+        }
         val mediaImage = imageProxy.image ?: run {
+            isProcessingFrame.set(false)
             imageProxy.close()
             return
         }
@@ -62,6 +70,7 @@ class CameraScanViewModel @Inject constructor(
                 refreshRecognizedMetadata(newKanji)
             } catch (_: Exception) {
             } finally {
+                isProcessingFrame.set(false)
                 imageProxy.close()
             }
         }

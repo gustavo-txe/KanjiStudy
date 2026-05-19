@@ -28,7 +28,7 @@
         tools:targetApi="31">
 
         <activity
-            android:name=".scan.ImageKanjiScanActivity"
+            android:name=".scan.imagescan.ImageKanjiScanActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
 

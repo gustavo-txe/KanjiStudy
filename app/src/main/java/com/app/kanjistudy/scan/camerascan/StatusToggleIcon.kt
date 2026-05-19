@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.camerascan
 
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.LinearEasing

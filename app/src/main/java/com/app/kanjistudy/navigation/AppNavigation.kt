@@ -23,7 +23,7 @@ import com.app.kanjistudy.help.HelpScreen
 import com.app.kanjistudy.home.kanjis.KanjiListScreen
 import com.app.kanjistudy.learned.LearnedScreen
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
-import com.app.kanjistudy.scan.ScanScreen
+import com.app.kanjistudy.scan.camerascan.ScanScreen
 import com.app.kanjistudy.onboarding.OnboardingManager
 
 private const val TRANSITION_DURATION_MS = 420

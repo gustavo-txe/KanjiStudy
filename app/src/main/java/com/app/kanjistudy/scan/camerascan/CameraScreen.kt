@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.camerascan
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -19,7 +19,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -61,6 +60,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -76,15 +76,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
+import com.app.kanjistudy.scan.imagescan.ImageKanjiScanActivity
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
+import java.util.concurrent.Executors
 import kotlin.jvm.java
 
 @SuppressLint("ContextCastToActivity")
@@ -113,7 +115,7 @@ fun CameraScreen(
 
     var optionsKanji by remember { mutableStateOf<Char?>(null) }
     var dialogKanji by remember { mutableStateOf<Char?>(null) }
-    var detailsKanji by remember { mutableStateOf<com.app.kanjistudy.data.model.KanjiData?>(null) }
+    var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
     var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
@@ -300,7 +302,7 @@ fun CameraScreen(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
+                        horizontalArrangement = Arrangement.End
                     ) {
                         StatusToggleIcon(
                             isLearned = isLearned,
@@ -371,16 +373,16 @@ fun CameraScreen(
         AlertDialog(
             onDismissRequest = { detailsKanji = null },
             title = {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     StatusToggleIcon(
                         isLearned = isLearned,
-                        onToggle = { toggleLearnedKanji = kanji.kanji.first() }                    )
+                        onToggle = { toggleLearnedKanji = kanji.kanji.first() })
                 }
             },
             text = {
                 Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = kanji.kanji, fontSize = 96.sp, lineHeight = 98.sp)
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceAround) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
                         DetailColumn(title = "Kun'yomi:", items = kanji.kunReadings)
                         DetailColumn(title = "On'yomi:", items = kanji.onReadings)
                         DetailColumn(title = "Meanings:", items = kanji.meanings)
@@ -441,6 +443,8 @@ fun CameraPreview(
                 scaleType = PreviewView.ScaleType.FILL_CENTER
             }
 
+            val analysisExecutor = Executors.newSingleThreadExecutor()
+
             val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
             cameraProviderFuture.addListener({
@@ -453,10 +457,12 @@ fun CameraPreview(
 
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                    .setOutputImageRotationEnabled(false)
                     .build()
                     .also { analysis ->
                         analysis.setAnalyzer(
-                            ContextCompat.getMainExecutor(ctx),
+                            analysisExecutor,
                             KanjiAnalyzer { image ->
                                 viewModel.onFrame(image)
                             }

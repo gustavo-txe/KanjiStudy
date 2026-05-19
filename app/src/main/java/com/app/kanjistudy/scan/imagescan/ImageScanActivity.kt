@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.imagescan
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

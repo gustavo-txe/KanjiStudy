@@ -1,7 +1,8 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.imagescan
 
 import android.content.Context
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.kanjistudy.data.repository.KanjiRepository

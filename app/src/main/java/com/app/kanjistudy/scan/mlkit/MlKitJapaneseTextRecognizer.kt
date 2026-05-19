@@ -30,6 +30,4 @@ class MlKitJapaneseTextRecognizer @Inject constructor() : TextRecognizer {
                     }
                 }
         }
-
-
 }

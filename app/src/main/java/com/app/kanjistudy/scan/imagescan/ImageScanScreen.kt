@@ -1,4 +1,4 @@
-package com.app.kanjistudy.scan
+package com.app.kanjistudy.scan.imagescan
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
@@ -30,11 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
@@ -55,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -67,11 +64,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.help.HelpActivity
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
-import com.app.kanjistudy.navigation.Screens
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
+import com.app.kanjistudy.scan.camerascan.StatusToggleIcon
 import com.app.kanjistudy.usecase.CustomTab
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
@@ -93,7 +91,7 @@ fun ImageScanScreen(
     var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
     var optionsKanji by remember { mutableStateOf<Char?>(null) }
     var googleKanji by remember { mutableStateOf<Char?>(null) }
-    var detailsKanji by remember { mutableStateOf<com.app.kanjistudy.data.model.KanjiData?>(null) }
+    var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
     var showImageScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("image_scan")) }
 
     val scannerLauncher = rememberLauncherForActivityResult(StartIntentSenderForResult()) { result ->
@@ -294,7 +292,7 @@ fun ImageScanScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 40.sp,
                                         lineHeight = 40.sp,
-                                        color = if (uiState.learnedKanjis.contains(kanji)) androidx.compose.ui.graphics.Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface,
+                                        color = if (uiState.learnedKanjis.contains(kanji)) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier
                                             .weight(1f)
                                             .combinedClickable(
@@ -381,7 +379,7 @@ fun ImageScanScreen(
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                                 StatusToggleIcon(
                                     isLearned = isLearned,
-                                    onToggle = { toggleLearnedKanji = kanji.kanji.first() }                                )
+                                    onToggle = { toggleLearnedKanji = kanji.kanji.first() })
                             }
                         },                        text = {
                             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
