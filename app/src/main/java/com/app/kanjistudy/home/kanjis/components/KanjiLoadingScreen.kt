@@ -91,10 +91,6 @@ fun KanjiLoadingScreen(
 
             Box(
                 modifier = Modifier
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(brush = brush, blendMode = BlendMode.Lighten)
-                    }
                     .padding(top = 8.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
@@ -106,13 +102,11 @@ fun KanjiLoadingScreen(
                         text = "Downloading kanji. Please wait...",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-
                         )
                     Text(
                         text = "${(progress * 100).toInt()}%",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-
                         )
                 }
             }

@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.app.kanjistudy"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.app.kanjistudy"

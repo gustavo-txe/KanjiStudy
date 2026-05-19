@@ -205,9 +205,9 @@ fun CameraScreen(
             animationSpec = infiniteRepeatable(
                 animation = keyframes {
                     durationMillis = 20000
-                    0f at 0 with LinearEasing
-                    1f at 10000 with LinearEasing
-                    0f at 20000 with LinearEasing
+                    0f at 0 using LinearEasing
+                    1f at 10000 using LinearEasing
+                    0f at 20000 using LinearEasing
                 },
                 repeatMode = RepeatMode.Restart
             ),
