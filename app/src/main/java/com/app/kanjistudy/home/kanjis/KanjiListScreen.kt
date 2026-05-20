@@ -256,14 +256,14 @@ fun KanjiListScreen(
                 AlertDialog(
                     onDismissRequest = { dialogType = null },
                     title = {
-                        Text(if (isLearned) "Remove learned kanji?" else "Add kanji?")
+                        Text(if (isLearned) "Remove Kanji?" else "Add Kanji?")
                     },
                     text = {
                         Text(
                             if (isLearned)
-                                "Would you like to remove $kanji from learned?"
+                                "Would you like to remove the kanji $kanji as learned?"
                             else
-                                "Would you like to add $kanji as learned?"
+                                "Would you like to add the kanji $kanji as learned?"
                         )
                     },
                     confirmButton = {

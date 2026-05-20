@@ -104,7 +104,7 @@ fun LearnedScreen(
                         IconButton(onClick = { showRemoveDialog = true }) {
                             Icon(modifier = Modifier.height(27.dp).width(27.dp),
                                 imageVector = Icons.Filled.DeleteOutline,
-                                contentDescription = "Remove learned kanji",
+                                contentDescription = "Remove Kanji",
                             )
                         }
                     }

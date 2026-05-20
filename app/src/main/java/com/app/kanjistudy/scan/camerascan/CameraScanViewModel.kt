@@ -8,6 +8,8 @@ import com.app.kanjistudy.data.repository.KanjiRepository
 import com.app.kanjistudy.scan.usecase.ScanKanjiUseCase
 import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +17,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -32,6 +36,15 @@ class CameraScanViewModel @Inject constructor(
 
     private val isProcessingFrame = AtomicBoolean(false)
 
+    private val lastFrameAcceptedAtMs = AtomicLong(0L)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val analysisDispatcher = Dispatchers.Default.limitedParallelism(1)
+
+    private companion object {
+        const val FRAME_ANALYSIS_INTERVAL_MS = 350L
+    }
+
     fun togglePause() {
         _uiState.update { it.copy(isPaused = !it.isPaused) }
     }
@@ -39,6 +52,16 @@ class CameraScanViewModel @Inject constructor(
     @SuppressLint("UnsafeOptInUsageError")
     fun onFrame(imageProxy: ImageProxy) {
         if (_uiState.value.isPaused) {
+            imageProxy.close()
+            return
+        }
+        val now = System.currentTimeMillis()
+        val lastAccepted = lastFrameAcceptedAtMs.get()
+        if (now - lastAccepted < FRAME_ANALYSIS_INTERVAL_MS) {
+            imageProxy.close()
+            return
+        }
+        if (!lastFrameAcceptedAtMs.compareAndSet(lastAccepted, now)) {
             imageProxy.close()
             return
         }
@@ -57,15 +80,15 @@ class CameraScanViewModel @Inject constructor(
             imageProxy.imageInfo.rotationDegrees
         )
 
-        viewModelScope.launch {
+        viewModelScope.launch(analysisDispatcher) {
             try {
                 val newKanji = scanKanjiUseCase.analyze(
                     image = image,
                     lastRecognizedKanji = _uiState.value.kanji
                 ) ?: return@launch
 
-                _uiState.update {
-                    it.copy(kanji = newKanji)
+                withContext(Dispatchers.Main.immediate) {
+                    _uiState.update { it.copy(kanji = newKanji) }
                 }
                 refreshRecognizedMetadata(newKanji)
             } catch (_: Exception) {
@@ -78,13 +101,13 @@ class CameraScanViewModel @Inject constructor(
 
 
     fun onKanjiLongClick(kanji: Char) {
-        viewModelScope.launch {
+        viewModelScope.launch(analysisDispatcher) {
             _uiEvent.emit(ScanUiEvent.CopyKanji(kanji))
         }
     }
 
     fun toggleLearnedKanji(kanji: Char) {
-        viewModelScope.launch {
+        viewModelScope.launch(analysisDispatcher) {
             kanjiRepository.toggleLearnedKanji(kanji.toString())
             refreshRecognizedMetadata(_uiState.value.kanji)
         }
@@ -97,12 +120,14 @@ class CameraScanViewModel @Inject constructor(
         val joyoMap = joyoKanjis.associateBy { it.kanji.first() }
         val learned = joyoKanjis.filter { it.isLearned }.mapTo(mutableSetOf()) { it.kanji.first() }
 
-        _uiState.update {
-            it.copy(
-                recognizedJoyoKanjis = joyoMap,
-                learnedKanjis = learned
-            )
-        }
+        withContext(Dispatchers.Main.immediate) {
+            _uiState.update {
+                it.copy(
+                    recognizedJoyoKanjis = joyoMap,
+                    learnedKanjis = learned
+                )
+            }
+            }
     }
 
 }

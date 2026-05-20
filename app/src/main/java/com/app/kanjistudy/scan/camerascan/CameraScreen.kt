@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.LinearEasing
@@ -78,6 +80,7 @@ import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import com.app.kanjistudy.data.model.KanjiData
@@ -88,6 +91,7 @@ import com.app.kanjistudy.scan.imagescan.ImageKanjiScanActivity
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
 import java.util.concurrent.Executors
 import kotlin.jvm.java
+import android.util.Size as AndroidSize
 
 @SuppressLint("ContextCastToActivity")
 @Composable
@@ -401,12 +405,12 @@ fun CameraScreen(
         AlertDialog(
             onDismissRequest = { toggleLearnedKanji = null },
             title = {
-                Text(if (isLearned) "Remove learned kanji?" else "Add kanji?")
+                Text(if (isLearned) "Remove Kanji?" else "Add Kanji?")
             },
             text = {
                 Text(
-                    if (isLearned) "Would you like to remove $kanji from learned?"
-                    else "Would you like to add $kanji as learned?"
+                    if (isLearned) "Would you like to remove the kanji $kanji as learned?"
+                    else "Would you like to add the kanji $kanji as learned?"
                 )
             },
             confirmButton = {
@@ -436,14 +440,21 @@ fun CameraPreview(
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            analysisExecutor.shutdown()
+        }
+    }
+
+
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { ctx ->
             val previewView = PreviewView(ctx).apply {
                 scaleType = PreviewView.ScaleType.FILL_CENTER
             }
-
-            val analysisExecutor = Executors.newSingleThreadExecutor()
 
             val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
@@ -459,6 +470,16 @@ fun CameraPreview(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setOutputImageRotationEnabled(false)
+                    .setResolutionSelector(
+                        ResolutionSelector.Builder()
+                            .setResolutionStrategy(
+                                ResolutionStrategy(
+                                    AndroidSize(1280, 720),
+                                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                                )
+                            )
+                            .build()
+                    )
                     .build()
                     .also { analysis ->
                         analysis.setAnalyzer(
