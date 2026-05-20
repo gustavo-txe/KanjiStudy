@@ -1,13 +1,10 @@
 package com.app.kanjistudy.scan.imagescan
 
 import android.app.Activity
-import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.widget.ImageView
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,7 +60,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.help.HelpActivity
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
@@ -71,8 +67,6 @@ import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.camerascan.StatusToggleIcon
 import com.app.kanjistudy.usecase.CustomTab
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -83,7 +77,6 @@ fun ImageScanScreen(
     viewModel: ImageScanViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val documentScannerOptions = viewModel.documentScannerOptions
     val configuration = LocalConfiguration.current
     val customTab = remember { CustomTab() }
     val clipboardManager = LocalClipboardManager.current
@@ -94,26 +87,16 @@ fun ImageScanScreen(
     var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
     var showImageScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("image_scan")) }
 
-    val scannerLauncher = rememberLauncherForActivityResult(StartIntentSenderForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
-            scanningResult?.pages?.firstOrNull()?.imageUri?.let(viewModel::onImageSelected)
-        }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let(viewModel::onImageSelected)
     }
 
     val context = LocalContext.current
-    val navController = rememberNavController()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                ImageKanjiScanUiEvent.LaunchDocumentScanner -> {
-                    GmsDocumentScanning.getClient(documentScannerOptions)
-                        .getStartScanIntent(context as ComponentActivity)
-                        .addOnSuccessListener { intentSender ->
-                            scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
-                        }
-                }
+                ImageKanjiScanUiEvent.LaunchGalleryPicker -> galleryLauncher.launch("image/*")
             }
         }
     }
@@ -142,7 +125,7 @@ fun ImageScanScreen(
 
 
             Text(
-                text = "Scan an image or document to detect Kanji characters.",
+                text = "Scan an image to detect Kanji characters.",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -182,18 +165,11 @@ fun ImageScanScreen(
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "Tap to scan an image or document",
+                                text = "Tap to select an image to scan",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 24.dp),
-                            )
-                            Text(
-                                text = "You can crop and adjust before analyzing.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 24.dp).padding(top = 8.dp),
                             )
                         }
                     }
@@ -422,7 +398,7 @@ fun ImageScanScreen(
 
             if (showImageScanHint) {
                 OnboardingOverlay(
-                    message = "Image Scanner\n\nUse this screen to scan kanji from photos and documents.\n\nTap the large card to open the scanner. You can choose an image from your device or scan a document page, then crop and adjust before analysis.\n\nAfter scanning, recognized kanji appear below. Use retry to analyze again or remove image to start over.",
+                    message = "Image Scanner\n\nUse this screen to scan kanji from images.\n\nTap the large card to open the scanner. You can select an image from your device for analysis.\n\nAfter scanning, recognized kanji appear below. Use retry to analyze again or remove image to start over.",
                     onDismiss = {
                         onboardingManager.markHintShown("image_scan")
                         showImageScanHint = false

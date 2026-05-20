@@ -2,13 +2,11 @@ package com.app.kanjistudy.scan.imagescan
 
 import android.content.Context
 import android.net.Uri
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.kanjistudy.data.repository.KanjiRepository
 import com.app.kanjistudy.scan.usecase.ImageScanFromGallery
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,16 +31,9 @@ class ImageScanViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<ImageKanjiScanUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    val documentScannerOptions = GmsDocumentScannerOptions.Builder()
-        .setGalleryImportAllowed(true)
-        .setPageLimit(1)
-        .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-        .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-        .build()
-
     fun onScanImageClick() {
         viewModelScope.launch {
-            _uiEvent.emit(ImageKanjiScanUiEvent.LaunchDocumentScanner)
+            _uiEvent.emit(ImageKanjiScanUiEvent.LaunchGalleryPicker)
         }
     }
 
@@ -112,5 +103,4 @@ class ImageScanViewModel @Inject constructor(
 }
 
 sealed interface ImageKanjiScanUiEvent {
-    data object LaunchDocumentScanner : ImageKanjiScanUiEvent
-}
+    data object LaunchGalleryPicker : ImageKanjiScanUiEvent}

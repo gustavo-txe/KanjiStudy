@@ -18,7 +18,7 @@ class HelpViewModel : ViewModel() {
                 HelpFeature(
                     title = "Scan (Camera)",
                     description = "Recognize kanji in real-time using your camera.",
-                    howToUse = "Point the camera to Japanese text, tap a detected kanji for options, and long press to copy quickly."
+                    howToUse = "Point the camera to Japanese text, tap a detected kanji for options."
                 ),
                 HelpFeature(
                     title = "Scan (Image)",
