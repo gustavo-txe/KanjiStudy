@@ -80,6 +80,8 @@ import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -159,7 +161,9 @@ fun CameraScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Click on a kanji for more details\nPause the camera for review",
+                    text = "Click on a kanji for more details\nPause the camera for review.\n" +
+                            "Stylized kanji or decorative fonts\n " +
+                            "can make identification more difficult.",
                     modifier = Modifier
                         .padding(top = 24.dp)
                         .onGloballyPositioned { coordinates ->
@@ -167,10 +171,12 @@ fun CameraScreen(
 
                         },
                     color = Color.White,
+                    fontSize = 14.sp,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
+
             }
             InstructionHintOverlay(
                 rect = rect
@@ -283,7 +289,8 @@ fun CameraScreen(
 
         if (showScanHint && pauseFabCenterX > 0.dp) {
             OnboardingOverlay(
-                message = "Scan\n\nUse your camera to identify kanji. Tap a kanji for Google details, or long-press to copy it\n\nClick the button in the bottom-right corner to pause the scan.",
+                message = "Scan\n\nUse your camera to identify kanji. Tap a kanji for Google details" +
+                        "\n\nClick the button in the bottom-right corner to pause the scan.",
                 onDismiss = {
                     onboardingManager.markHintShown("scan")
                     showScanHint = false

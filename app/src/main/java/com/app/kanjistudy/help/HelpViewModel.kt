@@ -18,12 +18,14 @@ class HelpViewModel : ViewModel() {
                 HelpFeature(
                     title = "Scan (Camera)",
                     description = "Recognize kanji in real-time using your camera.",
-                    howToUse = "Point the camera to Japanese text, tap a detected kanji for options."
+                    howToUse = "Point the camera to Japanese text, tap a detected kanji for options " +
+                            "(Stylized kanji or decorative fonts can make identification more difficult)."
                 ),
                 HelpFeature(
                     title = "Scan (Image)",
                     description = "Recognize kanji from an image in your gallery.",
-                    howToUse = "Open the image scan button in the scan screen, select a photo and review extracted kanji."
+                    howToUse = "Open the image scan button in the scan screen, select a photo and review extracted kanji " +
+                            "(Stylized kanji or decorative fonts can make identification more difficult)."
                 ),
                 HelpFeature(
                     title = "Learned",

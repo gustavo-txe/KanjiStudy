@@ -87,9 +87,10 @@ fun ImageScanScreen(
     var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
     var showImageScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("image_scan")) }
 
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let(viewModel::onImageSelected)
-    }
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let(viewModel::onImageSelected)
+        }
 
     val context = LocalContext.current
 
@@ -116,175 +117,203 @@ fun ImageScanScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeChanged = onThemeChanged,
                     onHelpClick = {
-                        context.startActivity(Intent(
-                            context, HelpActivity::class.java))
+                        context.startActivity(
+                            Intent(
+                                context, HelpActivity::class.java
+                            )
+                        )
                     },
                     showBackButton = true,
                     onBackClick = { (context as? Activity)?.finish() }
                 )
 
 
-            Text(
-                text = "Scan an image to detect Kanji characters.",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                fontSize = 16.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-            )
-
-            ElevatedCard(modifier = Modifier.size(imageSize)) {
-                Box(
+                Text(
+                    text = "Scan an image to detect Kanji characters.",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant,
-                            RoundedCornerShape(20.dp)
-                        )
-                        .clickable(
-                            enabled = !uiState.isLoading,
-                            onClick = viewModel::onScanImageClick
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (uiState.selectedImageUri != null) {
-                        AndroidView(
-                            modifier = Modifier.fillMaxSize(),
-                            factory = { androidContext ->
-                                ImageView(androidContext).apply {
-                                    scaleType = ImageView.ScaleType.CENTER_CROP
-                                }
-                            },
-                            update = { it.setImageURI(uiState.selectedImageUri) },
-                        )
-                    } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "Tap to select an image to scan",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 24.dp),
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                )
+
+
+                ElevatedCard(modifier = Modifier.size(imageSize)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant,
+                                RoundedCornerShape(20.dp)
                             )
+                            .clickable(
+                                enabled = !uiState.isLoading,
+                                onClick = viewModel::onScanImageClick
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (uiState.selectedImageUri != null) {
+                            AndroidView(
+                                modifier = Modifier.fillMaxSize(),
+                                factory = { androidContext ->
+                                    ImageView(androidContext).apply {
+                                        scaleType = ImageView.ScaleType.CENTER_CROP
+                                    }
+                                },
+                                update = { it.setImageURI(uiState.selectedImageUri) },
+                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Tap to select an image to scan",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp),
+                                )
+
+                                Text(
+                                    text = "Stylized kanji or decorative fonts " +
+                                            "can make identification more difficult.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = viewModel::retryScan,
-                    enabled = uiState.selectedImageUri != null && !uiState.isLoading,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = "Retry analysis",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-
-                Spacer(modifier = Modifier.size(12.dp))
-
-                OutlinedButton(
-                    onClick = viewModel::removeImage,
-                    enabled = uiState.selectedImageUri != null && !uiState.isLoading,
-                ) {
-                    Text("Remove image")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (uiState.isLoading) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Text("Analyzing image...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            uiState.message?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth().fillMaxHeight().padding(bottom = 20.dp)
-                    .height((configuration.screenHeightDp.dp * 0.32f).coerceIn(180.dp, 360.dp))
-                    .padding(top = 8.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (uiState.recognizedKanji.isBlank() && !uiState.isLoading) {
-                    Text(
-                        text = "Detected Kanji will appear here.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                } else {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = viewModel::retryScan,
+                        enabled = uiState.selectedImageUri != null && !uiState.isLoading,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                     ) {
-                        uiState.recognizedKanji.toList().chunked(4).forEach { rowKanjis ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                rowKanjis.forEach { kanji ->
-                                    Text(
-                                        text = kanji.toString(),
-                                        textAlign = TextAlign.Center,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 40.sp,
-                                        lineHeight = 40.sp,
-                                        color = if (uiState.learnedKanjis.contains(kanji)) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .combinedClickable(
+                        Icon(
+                            imageVector = Icons.Rounded.Refresh,
+                            contentDescription = "Retry analysis",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.size(12.dp))
+
+                    OutlinedButton(
+                        onClick = viewModel::removeImage,
+                        enabled = uiState.selectedImageUri != null && !uiState.isLoading,
+                    ) {
+                        Text("Remove image")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (uiState.isLoading) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Text(
+                            "Analyzing image...",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                uiState.message?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(bottom = 20.dp)
+                        .height((configuration.screenHeightDp.dp * 0.32f).coerceIn(180.dp, 360.dp))
+                        .padding(top = 8.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (uiState.recognizedKanji.isBlank() && !uiState.isLoading) {
+                        Text(
+                            text = "Detected Kanji will appear here.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            uiState.recognizedKanji.toList().chunked(4).forEach { rowKanjis ->
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        12.dp,
+                                        Alignment.CenterHorizontally
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    rowKanjis.forEach { kanji ->
+                                        Text(
+                                            text = kanji.toString(),
+                                            textAlign = TextAlign.Center,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 50.sp,
+                                            lineHeight = 50.sp,
+                                            color = if (uiState.learnedKanjis.contains(kanji)) {
+                                                Color(0xFF2E7D32)
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                            modifier = Modifier.combinedClickable(
                                                 onClick = { optionsKanji = kanji },
-                                                onLongClick = { clipboardManager.setText(AnnotatedString(kanji.toString())) }
-                                                    ),
-                                    )
-                                }
-                                repeat(4 - rowKanjis.size) {
-                                    Spacer(modifier = Modifier.weight(1f))
+                                                onLongClick = {
+                                                    clipboardManager.setText(
+                                                        AnnotatedString(kanji.toString())
+                                                    )
+                                                }
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
                 optionsKanji?.let { kanji ->
                     val joyoKanji = uiState.recognizedJoyoKanjis[kanji]
                     val isLearned = uiState.learnedKanjis.contains(kanji)
@@ -339,11 +368,18 @@ fun ImageScanScreen(
                         text = { Text("Would you like to search for $kanji on Google?") },
                         confirmButton = {
                             TextButton(onClick = {
-                                customTab.openCustomTab(context, "https://www.google.com/search?q=kanji+$kanji")
+                                customTab.openCustomTab(
+                                    context,
+                                    "https://www.google.com/search?q=kanji+$kanji"
+                                )
                                 googleKanji = null
                             }) { Text("Yes") }
                         },
-                        dismissButton = { TextButton(onClick = { googleKanji = null }) { Text("No") } }
+                        dismissButton = {
+                            TextButton(onClick = {
+                                googleKanji = null
+                            }) { Text("No") }
+                        }
                     )
                 }
 
@@ -352,22 +388,37 @@ fun ImageScanScreen(
                     AlertDialog(
                         onDismissRequest = { detailsKanji = null },
                         title = {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
                                 StatusToggleIcon(
                                     isLearned = isLearned,
                                     onToggle = { toggleLearnedKanji = kanji.kanji.first() })
                             }
-                        },                        text = {
-                            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        }, text = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(text = kanji.kanji, fontSize = 96.sp, lineHeight = 98.sp)
-                                Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceAround
+                                ) {
                                     DetailColumn(title = "Kun'yomi:", items = kanji.kunReadings)
                                     DetailColumn(title = "On'yomi:", items = kanji.onReadings)
                                     DetailColumn(title = "Meanings:", items = kanji.meanings)
                                 }
                             }
                         },
-                        confirmButton = { TextButton(onClick = { detailsKanji = null }) { Text("Close") } }
+                        confirmButton = {
+                            TextButton(onClick = {
+                                detailsKanji = null
+                            }) { Text("Close") }
+                        }
                     )
                 }
                 toggleLearnedKanji?.let { kanji ->
@@ -394,7 +445,7 @@ fun ImageScanScreen(
                         }
                     )
                 }
-        }
+            }
 
             if (showImageScanHint) {
                 OnboardingOverlay(

@@ -41,7 +41,8 @@ class KanjiRepository @Inject constructor(
             val kanjiData = coroutineScope {
                 chunk.map { kanji ->
                     async {
-                        fetchReadingMeaningWithRetry(kanji)                    }
+                        fetchReadingMeaningWithRetry(kanji)
+                    }
                 }.awaitAll().filterNotNull()
             }
 
