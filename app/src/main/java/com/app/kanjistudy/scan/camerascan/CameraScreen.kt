@@ -15,12 +15,15 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -85,12 +88,14 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.boundsInRoot
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.imagescan.ImageKanjiScanActivity
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
+import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 import kotlin.jvm.java
 import android.util.Size as AndroidSize
@@ -102,7 +107,8 @@ fun ScanScreen(
     onboardingManager: OnboardingManager,
 ) {
     CameraPermission {
-        CameraScreen(viewModel, onboardingManager)    }
+        CameraScreen(viewModel, onboardingManager)
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -125,6 +131,7 @@ fun CameraScreen(
     var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
+    var showScanInstructions by remember { mutableStateOf(true) }
 
     var pauseFabCenterX by remember { mutableStateOf(0.dp) }
     var pauseFabCenterY by remember { mutableStateOf(0.dp) }
@@ -148,69 +155,88 @@ fun CameraScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        delay(4000)
+        showScanInstructions = false
+    }
+    LaunchedEffect(showScanInstructions) {
+        if (!showScanInstructions) {
+            rect = null
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         CameraPreview(viewModel = viewModel)
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
+            AnimatedVisibility(
+                visible = showScanInstructions,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Click on a kanji for more details\nPause the camera for review.\n" +
+                                "Stylized kanji or decorative fonts\n " +
+                                "can make identification more difficult.",
+                        modifier = Modifier
+                            .onGloballyPositioned { coordinates ->
+                                rect = coordinates.boundsInParent()
+                            },
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .align(Alignment.TopCenter),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .weight(1f)
+                    .padding(top = 8.dp, bottom = 90.dp),
             ) {
-                Text(
-                    text = "Click on a kanji for more details\nPause the camera for review.\n" +
-                            "Stylized kanji or decorative fonts\n " +
-                            "can make identification more difficult.",
-                    modifier = Modifier
-                        .padding(top = 24.dp)
-                        .onGloballyPositioned { coordinates ->
-                            rect = coordinates.boundsInParent()
-
-                        },
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
-
+                items(uiState.kanji.toList()) { char ->
+                    Text(
+                        text = char.toString(),
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .combinedClickable(
+                                onClick = {
+                                    optionsKanji = char
+                                },
+                                onLongClick = {
+                                    viewModel.onKanjiLongClick(char)
+                                }
+                            )
+                            .fillMaxWidth(),
+                        fontSize = 50.sp,
+                        color = if (uiState.learnedKanjis.contains(char)) Color(0xFF4CAF50) else Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
+        }
+
+        if (showScanInstructions) {
             InstructionHintOverlay(
-                rect = rect
+                rect = rect,
             )
         }
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(450.dp)
-                .align(Alignment.Center)
-                .padding(top = 8.dp, bottom = 8.dp),
-        ) {
-            items(uiState.kanji.toList()) { char ->
-                Text(
-                    text = char.toString(),
-                    modifier = Modifier
-                        .padding(2.dp)
-                        .combinedClickable(
-                            onClick = {
-                                optionsKanji = char                            },
-                            onLongClick = {
-                                viewModel.onKanjiLongClick(char)
-                            }
-                        )
-                        .fillMaxWidth(),
-                    fontSize = 50.sp,
-                    color = if (uiState.learnedKanjis.contains(char)) Color(0xFF4CAF50) else Color.White,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
 
-        val imageScanGradientTransition = rememberInfiniteTransition(label = "image_scan_gradient_transition")
+        val imageScanGradientTransition =
+            rememberInfiniteTransition(label = "image_scan_gradient_transition")
         val shimmerProgress by imageScanGradientTransition.animateFloat(
             initialValue = 0f,
             targetValue = 1f,
@@ -239,7 +265,14 @@ fun CameraScreen(
             end = Offset(gradientShift + 680f, 0f)
         )
         FilledTonalButton(
-            onClick = { context.startActivity(Intent(context, ImageKanjiScanActivity::class.java)) },
+            onClick = {
+                context.startActivity(
+                    Intent(
+                        context,
+                        ImageKanjiScanActivity::class.java
+                    )
+                )
+            },
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(20.dp)
@@ -263,7 +296,8 @@ fun CameraScreen(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
-                    color = Color.White                )
+                    color = Color.White
+                )
             }
         }
 
@@ -391,9 +425,17 @@ fun CameraScreen(
                 }
             },
             text = {
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(text = kanji.kanji, fontSize = 96.sp, lineHeight = 98.sp)
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
                         DetailColumn(title = "Kun'yomi:", items = kanji.kunReadings)
                         DetailColumn(title = "On'yomi:", items = kanji.onReadings)
                         DetailColumn(title = "Meanings:", items = kanji.meanings)
@@ -532,7 +574,8 @@ private fun InstructionHintOverlay(
         drawRect(color = Color.Black.copy(alpha = 0.75f))
 
         val horizontalPadding = 20.dp.toPx()
-        val verticalPadding = 10.dp.toPx()
+        val verticalPadding = 20.dp.toPx()
+        val topPadding = 24.dp.toPx()
         val cornerRadius = 14.dp.toPx()
 
         val rectWidth = rect.width + (horizontalPadding * 2)
@@ -542,7 +585,7 @@ private fun InstructionHintOverlay(
             color = Color.Transparent,
             topLeft = Offset(
                 x = rect.left - horizontalPadding,
-                y = rect.top - verticalPadding
+                y = rect.top - verticalPadding + topPadding
             ),
             size = Size(
                 width = rectWidth,

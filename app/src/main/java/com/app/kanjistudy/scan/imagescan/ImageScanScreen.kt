@@ -178,7 +178,7 @@ fun ImageScanScreen(
                                 )
 
                                 Text(
-                                    text = "Stylized kanji or decorative fonts " +
+                                    text = "Stylized kanji, decorative fonts or image quality " +
                                             "can make identification more difficult.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
