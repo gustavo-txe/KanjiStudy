@@ -154,6 +154,13 @@ fun CameraScreen(
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+                ScanUiEvent.KanjiDownloadNotCompleted -> {
+                    Toast.makeText(
+                        context,
+                        "Please wait until the kanji download is complete before marking a kanji as learned.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -353,14 +360,16 @@ fun CameraScreen(
             onDismissRequest = { optionsKanji = null },
             title = {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        StatusToggleIcon(
-                            isLearned = isLearned,
-                            onToggle = { toggleLearnedKanji = kanji }
-                        )
+                    if (joyoKanji != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            StatusToggleIcon(
+                                isLearned = isLearned,
+                                onToggle = { toggleLearnedKanji = kanji }
+                            )
+                        }
                     }
                     Text(
                         text = "$kanji",

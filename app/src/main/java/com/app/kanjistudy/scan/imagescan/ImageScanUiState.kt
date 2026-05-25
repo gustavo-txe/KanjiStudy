@@ -10,4 +10,5 @@ data class ImageScanUiState(
     val message: String? = null,
     val recognizedJoyoKanjis: Map<Char, KanjiData> = emptyMap(),
     val learnedKanjis: Set<Char> = emptySet(),
+    val isKanjiDownloadComplete: Boolean = false,
 )

@@ -3,6 +3,7 @@ package com.app.kanjistudy.scan.imagescan
 import android.app.Activity
 import android.content.Intent
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -98,6 +99,13 @@ fun ImageScanScreen(
         viewModel.uiEvent.collect { event ->
             when (event) {
                 ImageKanjiScanUiEvent.LaunchGalleryPicker -> galleryLauncher.launch("image/*")
+                ImageKanjiScanUiEvent.KanjiDownloadNotCompleted -> {
+                    Toast.makeText(
+                        context,
+                        "Please wait until the kanji download is complete before marking a kanji as learned.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -321,14 +329,16 @@ fun ImageScanScreen(
                         onDismissRequest = { optionsKanji = null },
                         title = {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    StatusToggleIcon(
-                                        isLearned = isLearned,
-                                        onToggle = { toggleLearnedKanji = kanji }
-                                    )
+                                if (joyoKanji != null) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        StatusToggleIcon(
+                                            isLearned = isLearned,
+                                            onToggle = { toggleLearnedKanji = kanji }
+                                        )
+                                    }
                                 }
                                 Text(
                                     text = "$kanji",

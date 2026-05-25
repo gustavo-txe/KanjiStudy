@@ -45,6 +45,12 @@ class CameraScanViewModel @Inject constructor(
         const val FRAME_ANALYSIS_INTERVAL_MS = 350L
     }
 
+    init {
+        viewModelScope.launch(analysisDispatcher) {
+            refreshDownloadStatus()
+        }
+    }
+
     fun togglePause() {
         _uiState.update { it.copy(isPaused = !it.isPaused) }
     }
@@ -108,6 +114,13 @@ class CameraScanViewModel @Inject constructor(
 
     fun toggleLearnedKanji(kanji: Char) {
         viewModelScope.launch(analysisDispatcher) {
+            val isLearned = _uiState.value.learnedKanjis.contains(kanji)
+            val isDownloadComplete = kanjiRepository.isKanjiDownloadComplete()
+            _uiState.update { it.copy(isKanjiDownloadComplete = isDownloadComplete) }
+            if (!isLearned && !isDownloadComplete) {
+                _uiEvent.emit(ScanUiEvent.KanjiDownloadNotCompleted)
+                return@launch
+            }
             kanjiRepository.toggleLearnedKanji(kanji.toString())
             refreshRecognizedMetadata(_uiState.value.kanji)
         }
@@ -127,7 +140,13 @@ class CameraScanViewModel @Inject constructor(
                     learnedKanjis = learned
                 )
             }
-            }
+        }
+    }
+
+    suspend fun refreshDownloadStatus() {
+        val isComplete = kanjiRepository.isKanjiDownloadComplete()
+        _uiState.update { it.copy(isKanjiDownloadComplete = isComplete) }
+
     }
 
 }

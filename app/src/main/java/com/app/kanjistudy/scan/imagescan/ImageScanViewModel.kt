@@ -31,6 +31,12 @@ class ImageScanViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<ImageKanjiScanUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
+    init {
+        viewModelScope.launch {
+            refreshDownloadStatus()
+        }
+    }
+
     fun onScanImageClick() {
         viewModelScope.launch {
             _uiEvent.emit(ImageKanjiScanUiEvent.LaunchGalleryPicker)
@@ -58,6 +64,13 @@ class ImageScanViewModel @Inject constructor(
 
     fun toggleLearnedKanji(kanji: Char) {
         viewModelScope.launch {
+            val isLearned = _uiState.value.learnedKanjis.contains(kanji)
+            val isDownloadComplete = kanjiRepository.isKanjiDownloadComplete()
+            _uiState.update { it.copy(isKanjiDownloadComplete = isDownloadComplete) }
+
+            if (!isLearned && !isDownloadComplete) {                _uiEvent.emit(ImageKanjiScanUiEvent.KanjiDownloadNotCompleted)
+                return@launch
+            }
             kanjiRepository.toggleLearnedKanji(kanji.toString())
             refreshRecognizedMetadata(_uiState.value.recognizedKanji)
         }
@@ -100,7 +113,13 @@ class ImageScanViewModel @Inject constructor(
             )
         }
     }
+    private suspend fun refreshDownloadStatus() {
+        val isComplete = kanjiRepository.isKanjiDownloadComplete()
+        _uiState.update { it.copy(isKanjiDownloadComplete = isComplete) }
+    }
 }
 
 sealed interface ImageKanjiScanUiEvent {
-    data object LaunchGalleryPicker : ImageKanjiScanUiEvent}
+    data object LaunchGalleryPicker : ImageKanjiScanUiEvent
+    data object KanjiDownloadNotCompleted : ImageKanjiScanUiEvent
+}
