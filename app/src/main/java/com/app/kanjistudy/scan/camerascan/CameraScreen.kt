@@ -100,6 +100,8 @@ import java.util.concurrent.Executors
 import kotlin.jvm.java
 import android.util.Size as AndroidSize
 
+private var showScanInstructionsProcess = false
+
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun ScanScreen(
@@ -131,8 +133,9 @@ fun CameraScreen(
     var toggleLearnedKanji by remember { mutableStateOf<Char?>(null) }
 
     var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
-    var showScanInstructions by remember { mutableStateOf(true) }
-
+    var showScanInstructions by remember {
+        mutableStateOf(!showScanInstructionsProcess)
+    }
     var pauseFabCenterX by remember { mutableStateOf(0.dp) }
     var pauseFabCenterY by remember { mutableStateOf(0.dp) }
 
@@ -155,10 +158,14 @@ fun CameraScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        delay(4000)
-        showScanInstructions = false
+    LaunchedEffect(showScanInstructions) {
+        if (showScanInstructions) {
+            showScanInstructionsProcess = true
+            delay(2000)
+            showScanInstructions = false
+        }
     }
+
     LaunchedEffect(showScanInstructions) {
         if (!showScanInstructions) {
             rect = null
@@ -180,13 +187,11 @@ fun CameraScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(top = 48.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "Click on a kanji for more details\nPause the camera for review.\n" +
-                                "Stylized kanji or decorative fonts\n " +
-                                "can make identification more difficult.",
+                        text = "Click on a kanji for more details\nPause the camera for review.\n",
                         modifier = Modifier
                             .onGloballyPositioned { coordinates ->
                                 rect = coordinates.boundsInParent()
@@ -324,7 +329,10 @@ fun CameraScreen(
         if (showScanHint && pauseFabCenterX > 0.dp) {
             OnboardingOverlay(
                 message = "Scan\n\nUse your camera to identify kanji. Tap a kanji for Google details" +
-                        "\n\nClick the button in the bottom-right corner to pause the scan.",
+                        "\n\nClick the button in the bottom-right corner to pause the scan." +
+                        "\n\nStylized kanji, decorative fonts\n" +
+                        "or image quality can make \n" +
+                        "identification more difficult.",
                 onDismiss = {
                     onboardingManager.markHintShown("scan")
                     showScanHint = false
@@ -574,8 +582,8 @@ private fun InstructionHintOverlay(
         drawRect(color = Color.Black.copy(alpha = 0.75f))
 
         val horizontalPadding = 20.dp.toPx()
-        val verticalPadding = 20.dp.toPx()
-        val topPadding = 24.dp.toPx()
+        val verticalPadding = 0.dp.toPx()
+        val topPadding = 35.dp.toPx()
         val cornerRadius = 14.dp.toPx()
 
         val rectWidth = rect.width + (horizontalPadding * 2)
