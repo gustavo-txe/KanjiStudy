@@ -29,27 +29,51 @@ class LearnedViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         kanjis = kanjis,
-                        filteredKanjis = filterKanjis(kanjis, state.query)
-                    )
+                        filteredKanjis = applyFilters(kanjis, state.query, state.selectedJlptLevel)                    )
                 }
             }
         }
     }
 
-    private fun filterKanjis(
-        kanjis: List<KanjiData>,
-        query: String
-    ): List<KanjiData> {
-
-        val lowerQuery = query.trim().lowercase()
-        if (lowerQuery.isBlank()) return kanjis
-
-        return kanjis.filter { kanji ->
-            kanji.kanji.contains(lowerQuery) ||
-                    kanji.kunReadings.joinToString(" ").lowercase().contains(lowerQuery) ||
-                    kanji.onReadings.joinToString(" ").lowercase().contains(lowerQuery) ||
-                    kanji.meanings.joinToString(" ").lowercase().contains(lowerQuery)
+    fun onQueryChange(query: String) {
+        _uiState.update { state ->
+            state.copy(
+                query = query,
+                filteredKanjis = applyFilters(state.kanjis, query, state.selectedJlptLevel)
+            )
         }
+    }
+
+    fun onJlptLevelSelected(level: Int?) {
+        _uiState.update { state ->
+            state.copy(
+                selectedJlptLevel = level,
+                filteredKanjis = applyFilters(state.kanjis, state.query, level)
+            )
+        }
+    }
+
+    private fun applyFilters(kanjis: List<KanjiData>, query: String, level: Int?): List<KanjiData> {
+        val normalizedQuery = query.trim().lowercase()
+        return kanjis.filter { kanji ->
+            val levelMatches = level == null || kanji.jlpt == level
+            val queryMatches = normalizedQuery.isBlank() || matchesKanji(kanji, normalizedQuery)
+            levelMatches && queryMatches
+        }
+    }
+
+    private fun matchesKanji(kanji: KanjiData, query: String): Boolean {
+        if (kanji.kanji == query) return true
+        return (kanji.kunReadings + kanji.onReadings + kanji.meanings).any { exactTermMatch(it, query) }
+    }
+
+    private fun exactTermMatch(value: String, query: String): Boolean {
+        val normalized = value.trim().lowercase()
+        if (normalized == query) return true
+        return normalized
+            .split(Regex("[\\s,;:.!?()\\[\\]{}\\-_/、。・]+"))
+            .filter { it.isNotBlank() }
+            .any { it == query }
     }
 
     fun toggleLearnedKanji(kanji: String) {

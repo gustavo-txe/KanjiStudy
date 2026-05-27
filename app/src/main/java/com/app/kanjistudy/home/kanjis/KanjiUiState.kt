@@ -10,6 +10,7 @@ data class KanjiUiState(
     val meanings: Map<String, List<String>> = emptyMap(),
     val jlptLevels: Map<String, Int?> = emptyMap(),
     var query: String = "",
+    val selectedJlptLevel: Int? = null,
     val error: String? = null,
 
 )

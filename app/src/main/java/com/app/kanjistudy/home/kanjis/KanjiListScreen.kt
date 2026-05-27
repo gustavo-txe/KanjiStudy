@@ -6,7 +6,9 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,9 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +57,7 @@ import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import kotlin.collections.forEach
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun KanjiListScreen(
     viewModel: KanjiViewModel = hiltViewModel(),
@@ -62,6 +67,7 @@ fun KanjiListScreen(
 
     val context = LocalContext.current
     val customTab = remember { CustomTab() }
+    val clipboardManager = LocalClipboardManager.current
 
     val kanjisKunMap = uiState.kunReadings
     val kanjisOnMap = uiState.onReadings
@@ -83,6 +89,7 @@ fun KanjiListScreen(
                 is KanjiUiEvent.ShowDialog -> {
                     dialogType = event.dialog
                 }
+
                 else -> Unit
             }
         }
@@ -96,6 +103,7 @@ fun KanjiListScreen(
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "infiniteColor")
+
 
     val animatedColor by infiniteTransition.animateColor(
         initialValue = Color(0xFF28D0A1),
@@ -113,10 +121,11 @@ fun KanjiListScreen(
             modifier = Modifier
         )
 
-        SearchBarKanji(onSearch = viewModel::onQueryChange)
+        SearchBarKanji(query = uiState.query, onSearch = viewModel::onQueryChange)
 
         LazyColumn {
-            items(items= uiState.filteredKanjis,
+            items(
+                items = uiState.filteredKanjis,
                 key = { it }) { kanji ->
 
                 val kunReadings = kanjisKunMap[kanji] ?: listOf("loading...")
@@ -146,8 +155,12 @@ fun KanjiListScreen(
                         Text(
                             text = jlptLevel?.let { "JLPT $it" } ?: "JLPT: N/A",
                             fontSize = 16.sp,
-                            modifier = Modifier.align(Alignment.TopStart).padding( start = 20.dp,
-                                top = 12.dp, bottom = 12.dp, end = 12.dp),
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(
+                                    start = 20.dp,
+                                    top = 12.dp, bottom = 12.dp, end = 12.dp
+                                ),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -174,11 +187,17 @@ fun KanjiListScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    viewModel.openGoogleSearch(kanji)
-                                }
+                                .combinedClickable(
+                                    onClick = {
+                                        clipboardManager.setText(
+                                            AnnotatedString(kanji)
+                                        )
+                                    },
+                                    onLongClick = {
+                                        viewModel.openGoogleSearch(kanji)
+                                    }
+                                )
                         ) {
-
                             Text(
                                 text = kanji,
                                 fontSize = 150.sp,
@@ -259,6 +278,10 @@ fun KanjiListScreen(
                 )
             }
 
+            //clipboardManager.setText(
+            //                        AnnotatedString(event.kanji.toString())
+            //                    )
+
             is KanjiDialog.ToggleLearned -> {
                 val kanji = currentDialog.kanji
                 val isLearned = currentDialog.isLearned
@@ -292,9 +315,9 @@ fun KanjiListScreen(
         }
         if (showHomeHint) {
             OnboardingOverlay(
-                message = "Welcome to Kanji Scanner!\n\n"+
-                        "This quick tutorial will guide you through the app’s features.\n\n"+
-                "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.\n\n",
+                message = "Welcome to Kanji Scanner!\n\n" +
+                        "This quick tutorial will guide you through the app’s features.\n\n" +
+                        "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.\n\n",
                 onDismiss = {
                     onboardingManager.markHintShown("home")
                     showHomeHint = false

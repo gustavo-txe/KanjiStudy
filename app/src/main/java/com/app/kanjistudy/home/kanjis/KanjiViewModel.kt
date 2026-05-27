@@ -58,11 +58,12 @@ class KanjiViewModel @Inject constructor(
                 updateMaps(localData)
 
                 _uiState.update {
+                    val joyoKanjis = localData.map { kanjiData -> kanjiData.kanji }
                     it.copy(
-                        joyoKanjis = localData.map { it.kanji },
+                        joyoKanjis = joyoKanjis,
                         isLoading = false,
                         loadingProgress = 1f,
-                        filteredKanjis = localData.map { it.kanji }
+                        filteredKanjis = applyFilters(it.copy(joyoKanjis = joyoKanjis))
                     )
                 }
 
@@ -72,7 +73,8 @@ class KanjiViewModel @Inject constructor(
                         isLoading = false,
                         error = "Erro ao carregar kanjis"
                     )
-                }            }
+                }
+            }
 
         }
     }
@@ -90,45 +92,44 @@ class KanjiViewModel @Inject constructor(
 
     fun onQueryChange(query: String) {
         _uiState.update { state ->
-            state.copy(
-                query = query,
-                filteredKanjis = filterKanjis(query, state)
-            )
+            val updatedState = state.copy(query = query)
+            updatedState.copy(filteredKanjis = applyFilters(updatedState))
         }
     }
 
-    private fun filterKanjis(
-        query: String,
-        state: KanjiUiState
-    ): List<String> {
-
-        val lowerQuery = query.trim().lowercase()
-
-        if (lowerQuery.isBlank()) {
-            return state.joyoKanjis
+    fun onJlptLevelSelected(level: Int?) {
+        _uiState.update { state ->
+            val updatedState = state.copy(selectedJlptLevel = level)
+            updatedState.copy(filteredKanjis = applyFilters(updatedState))
         }
+    }
 
+    private fun applyFilters(state: KanjiUiState): List<String> {
+        val normalizedQuery = state.query.trim().lowercase()
         return state.joyoKanjis.filter { kanji ->
-            val kun = state.kunReadings[kanji]
-                ?.joinToString(" ")
-                ?.lowercase()
-                .orEmpty()
-
-            val on = state.onReadings[kanji]
-                ?.joinToString(" ")
-                ?.lowercase()
-                .orEmpty()
-
-            val mean = state.meanings[kanji]
-                ?.joinToString(" ")
-                ?.lowercase()
-                .orEmpty()
-
-            kanji.contains(lowerQuery) ||
-                    kun.contains(lowerQuery) ||
-                    on.contains(lowerQuery) ||
-                    mean.contains(lowerQuery)
+            val levelMatches = state.selectedJlptLevel == null || state.jlptLevels[kanji] == state.selectedJlptLevel
+            val queryMatches = normalizedQuery.isBlank() || matchesKanji(state, kanji, normalizedQuery)
+            levelMatches && queryMatches
         }
+    }
+
+    private fun matchesKanji(state: KanjiUiState, kanji: String, query: String): Boolean {
+        if (kanji == query) return true
+
+        val readingMatches = state.kunReadings[kanji].orEmpty().any { exactTermMatch(it, query) } ||
+                state.onReadings[kanji].orEmpty().any { exactTermMatch(it, query) }
+        val meaningMatches = state.meanings[kanji].orEmpty().any { exactTermMatch(it, query) }
+
+        return readingMatches || meaningMatches
+    }
+
+    private fun exactTermMatch(value: String, query: String): Boolean {
+        val normalized = value.trim().lowercase()
+        if (normalized == query) return true
+        return normalized
+            .split(Regex("[\\s,;:.!?()\\[\\]{}\\-_/、。・]+"))
+            .filter { it.isNotBlank() }
+            .any { it == query }
     }
 
     fun addLearnedKanji(kanji: String, isLearned: Boolean) {

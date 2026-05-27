@@ -31,8 +31,11 @@ class HelpActivity : ComponentActivity() {
                     topBar = {
                         HomeTopBar(
                             isDarkTheme = isDarkTheme,
+                            showJlptFilter = false,
+                            selectedJlptLevel = null,
+                            onOpenDrawer = {},
+                            onOpenJlptFilter = {},
                             onThemeChanged = themeViewModel::onThemeChanged,
-                            onHelpClick = {},
                             showBackButton = true,
                             onBackClick = { finish() }
                         )

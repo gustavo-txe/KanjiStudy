@@ -123,14 +123,17 @@ fun ImageScanScreen(
             ) {
                 HomeTopBar(
                     isDarkTheme = isDarkTheme,
-                    onThemeChanged = onThemeChanged,
-                    onHelpClick = {
+                    showJlptFilter = false,
+                    selectedJlptLevel = null,
+                    onOpenDrawer = {
                         context.startActivity(
                             Intent(
                                 context, HelpActivity::class.java
                             )
                         )
                     },
+                    onOpenJlptFilter = {},
+                    onThemeChanged = onThemeChanged,
                     showBackButton = true,
                     onBackClick = { (context as? Activity)?.finish() }
                 )

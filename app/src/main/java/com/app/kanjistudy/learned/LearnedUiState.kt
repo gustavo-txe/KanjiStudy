@@ -6,6 +6,7 @@ data class LearnedUiState(
     val kanjis: List<KanjiData> = emptyList(),
     val filteredKanjis: List<KanjiData> = emptyList(),
     val query: String = "",
+    val selectedJlptLevel: Int? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
