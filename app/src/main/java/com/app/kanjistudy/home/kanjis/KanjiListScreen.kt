@@ -137,11 +137,19 @@ fun KanjiListScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
+                            .fillMaxSize()
                             .align(Alignment.End)
                             .clickable {
                                 viewModel.addLearnedKanji(kanji, isLearned)
                             }) {
+                        Text(
+                            text = kanji,
+                            fontSize = 24.sp,
+                            modifier = Modifier.align(Alignment.TopStart).padding( start = 20.dp,
+                                top = 12.dp, bottom = 12.dp, end = 12.dp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Icon(
                             painter = if (!isLearned) painterResource(id = R.drawable.baseline_add_24)
                             else painterResource(id = R.drawable.checkicon),
@@ -169,6 +177,7 @@ fun KanjiListScreen(
                                     viewModel.openGoogleSearch(kanji)
                                 }
                         ) {
+
                             Text(
                                 text = kanji,
                                 fontSize = 150.sp,
