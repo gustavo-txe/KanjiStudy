@@ -121,8 +121,11 @@ fun KanjiListScreen(
             modifier = Modifier
         )
 
-        SearchBarKanji(query = uiState.query, onSearch = viewModel::onQueryChange)
-
+        SearchBarKanji(
+            queryInput = uiState.queryInput,
+            onQueryChange = viewModel::onQueryChange,
+            onSearchRequest = viewModel::onSearchRequested
+        )
         LazyColumn {
             items(
                 items = uiState.filteredKanjis,

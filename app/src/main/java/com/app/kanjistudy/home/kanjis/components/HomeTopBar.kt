@@ -73,10 +73,10 @@ fun HomeTopBar(
                 if (showJlptFilter) {
                     AssistChip(
                         onClick = onOpenJlptFilter,
-                        label = { Text(selectedJlptLevel?.let { "JLPT N$it" } ?: "ALL KANJI") },
+                        label = { Text(selectedJlptLevel?.let { "N$it" } ?: "ALL") },
                         leadingIcon = { Icon(Icons.Default.FilterList, contentDescription = null) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))

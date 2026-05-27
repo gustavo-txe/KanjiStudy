@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,12 +17,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class KanjiViewModel @Inject constructor(
     private val repository: KanjiRepository
 ) : ViewModel() {
+
+    private var filterJob: Job? = null
 
     private val _uiState = MutableStateFlow(KanjiUiState())
     val uiState: StateFlow<KanjiUiState> = _uiState.asStateFlow()
@@ -31,7 +36,7 @@ class KanjiViewModel @Inject constructor(
     val learnedKanjis: StateFlow<List<KanjiData>> = repository.getLearnedKanjis()
         .stateIn(
             viewModelScope,
-            SharingStarted.Companion.WhileSubscribed(5000),
+            SharingStarted.WhileSubscribed(5000),
             emptyList()
         )
 
@@ -91,21 +96,43 @@ class KanjiViewModel @Inject constructor(
     }
 
     fun onQueryChange(query: String) {
-        _uiState.update { state ->
-            val updatedState = state.copy(query = query)
-            updatedState.copy(filteredKanjis = applyFilters(updatedState))
+        _uiState.update { it.copy(queryInput = query) }
+    }
+
+    fun onSearchRequested() {
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch {
+            val submittedState = _uiState.value.copy(submittedQuery = _uiState.value.queryInput)
+            val filteredKanjis = withContext(Dispatchers.IO) {
+                applyFilters(submittedState)
+            }
+            _uiState.update {
+                it.copy(
+                    submittedQuery = submittedState.submittedQuery,
+                    filteredKanjis = filteredKanjis
+                )
+            }
         }
     }
 
     fun onJlptLevelSelected(level: Int?) {
-        _uiState.update { state ->
-            val updatedState = state.copy(selectedJlptLevel = level)
-            updatedState.copy(filteredKanjis = applyFilters(updatedState))
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch {
+            val updatedState = _uiState.value.copy(selectedJlptLevel = level)
+            val filteredKanjis = withContext(Dispatchers.Default) {
+                applyFilters(updatedState)
+            }
+            _uiState.update {
+                it.copy(
+                    selectedJlptLevel = level,
+                    filteredKanjis = filteredKanjis
+                )
+            }
         }
     }
 
     private fun applyFilters(state: KanjiUiState): List<String> {
-        val normalizedQuery = state.query.trim().lowercase()
+        val normalizedQuery = state.submittedQuery.trim().lowercase()
         return state.joyoKanjis.filter { kanji ->
             val levelMatches = state.selectedJlptLevel == null || state.jlptLevels[kanji] == state.selectedJlptLevel
             val queryMatches = normalizedQuery.isBlank() || matchesKanji(state, kanji, normalizedQuery)
