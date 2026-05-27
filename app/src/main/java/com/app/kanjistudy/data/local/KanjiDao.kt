@@ -19,6 +19,9 @@ interface KanjiDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(kanjis: List<KanjiData>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(kanjis: List<KanjiData>)
+
     @Query("UPDATE kanji_table SET isLearned = 1 WHERE kanji = :kanji")
     suspend fun markAsLearned(kanji: String) : Int
 
@@ -33,5 +36,11 @@ interface KanjiDao {
 
     @Query("SELECT * FROM kanji_table WHERE kanji IN (:kanjis)")
     suspend fun getKanjisByChars(kanjis: List<String>): List<KanjiData>
+
+    @Query("SELECT COUNT(*) FROM kanji_table WHERE jlpt IS NULL")
+    suspend fun countKanjisMissingJlpt(): Int
+
+    @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
+    suspend fun getLearnedKanjisOnce(): List<KanjiData>
 
 }

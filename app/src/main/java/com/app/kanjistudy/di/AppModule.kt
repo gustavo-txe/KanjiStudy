@@ -44,7 +44,8 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "kanji_table"
-        ).build()
+        ).addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

@@ -122,6 +122,7 @@ fun KanjiListScreen(
                 val kunReadings = kanjisKunMap[kanji] ?: listOf("loading...")
                 val onReadings = kanjisOnMap[kanji] ?: listOf("loading...")
                 val kanjisMeanings = kanjisMeanings[kanji] ?: listOf("loading...")
+                val jlptLevel = uiState.jlptLevels[kanji]
 
                 val isLearned = learnedKanjiSet.contains(kanji)
 
@@ -143,8 +144,8 @@ fun KanjiListScreen(
                                 viewModel.addLearnedKanji(kanji, isLearned)
                             }) {
                         Text(
-                            text = kanji,
-                            fontSize = 24.sp,
+                            text = jlptLevel?.let { "JLPT $it" } ?: "JLPT: N/A",
+                            fontSize = 16.sp,
                             modifier = Modifier.align(Alignment.TopStart).padding( start = 20.dp,
                                 top = 12.dp, bottom = 12.dp, end = 12.dp),
                             color = MaterialTheme.colorScheme.onSurface,

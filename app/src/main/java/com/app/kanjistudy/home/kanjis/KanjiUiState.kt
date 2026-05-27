@@ -8,6 +8,7 @@ data class KanjiUiState(
     val kunReadings: Map<String, List<String>> = emptyMap(),
     val onReadings: Map<String, List<String>> = emptyMap(),
     val meanings: Map<String, List<String>> = emptyMap(),
+    val jlptLevels: Map<String, Int?> = emptyMap(),
     var query: String = "",
     val error: String? = null,
 

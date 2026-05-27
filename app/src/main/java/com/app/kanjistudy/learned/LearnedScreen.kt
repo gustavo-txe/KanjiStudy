@@ -90,7 +90,10 @@ fun LearnedScreen(
                                 Toast.LENGTH_SHORT
                             ).show()
                         }) {
-                            Icon(modifier = Modifier.height(20.dp).width(20.dp),
+                            Icon(
+                                modifier = Modifier
+                                    .height(20.dp)
+                                    .width(20.dp),
                                 imageVector = Icons.Filled.ContentCopy,
                                 contentDescription = "Copy kanji",
                             )
@@ -99,10 +102,28 @@ fun LearnedScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        kanji.jlpt?.let { jlpt ->
+                            Text(
+                                text = "JLPT $jlpt",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .align(Alignment.CenterVertically)
+                                    .padding(end = 4.dp),
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(onClick = { showRemoveDialog = true }) {
-                            Icon(modifier = Modifier.height(27.dp).width(27.dp),
+                            Icon(
+                                modifier = Modifier
+                                    .height(27.dp)
+                                    .width(27.dp),
                                 imageVector = Icons.Filled.DeleteOutline,
                                 contentDescription = "Remove Kanji",
                             )
@@ -151,7 +172,8 @@ fun LearnedScreen(
                 onDismissRequest = { showRemoveDialog = false },
                 title = { Text("Remove Kanji?") },
                 text = {
-                    Text("Would you like to remove the kanji ${selectedKanji?.kanji} as learned?")                },
+                    Text("Would you like to remove the kanji ${selectedKanji?.kanji} as learned?")
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         selectedKanji?.let { viewModel.toggleLearnedKanji(it.kanji) }
@@ -177,19 +199,26 @@ fun LearnedScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
+            ) {
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(15.dp).padding(0.dp, 6.dp,
-                        0.dp, 0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(15.dp)
+                        .padding(
+                            0.dp, 6.dp,
+                            0.dp, 0.dp
+                        ),
                     color = Color(0xFF048006),
 
-                )
+                    )
                 Text(
                     text = "$learnedCount/$TOTAL_JOYO_KANJI Jōyō kanji learned",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally)
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .align(Alignment.CenterHorizontally)
                 )
             }
 

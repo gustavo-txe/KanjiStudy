@@ -82,7 +82,8 @@ class KanjiViewModel @Inject constructor(
             it.copy(
                 kunReadings = data.associate { it.kanji to it.kunReadings },
                 onReadings = data.associate { it.kanji to it.onReadings },
-                meanings = data.associate { it.kanji to it.meanings }
+                meanings = data.associate { it.kanji to it.meanings },
+                jlptLevels = data.associate { it.kanji to it.jlpt }
             )
         }
     }

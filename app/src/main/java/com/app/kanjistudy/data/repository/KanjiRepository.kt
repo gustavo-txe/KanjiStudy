@@ -1,5 +1,8 @@
 package com.app.kanjistudy.data.repository
 
+import android.content.SharedPreferences
+import androidx.core.content.edit
+import com.app.kanjistudy.data.local.AppDatabase
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.local.KanjiDao
 import com.app.kanjistudy.data.remote.KanjiApiService
@@ -15,6 +18,7 @@ import javax.inject.Inject
 class KanjiRepository @Inject constructor(
     private val kanjiDao: KanjiDao,
     private val api: KanjiApiService,
+    private val sharedPreferences: SharedPreferences
 ) {
 
     private companion object {
@@ -22,6 +26,7 @@ class KanjiRepository @Inject constructor(
         const val CHUNK_SIZE = 40
         const val MAX_RETRIES = 3
         const val RETRY_DELAY_MS = 400L
+        const val LAST_REFRESHED_SCHEMA_VERSION = "last_refreshed_schema_version"
     }
 
     suspend fun ensureAllKanjisLoaded(
@@ -30,6 +35,7 @@ class KanjiRepository @Inject constructor(
 
         val count = kanjiDao.countKanjis()
         if (count >= MIN_KANJI_COUNT) {
+            refreshKanjiUpdated(onProgress = onProgress)
             return@withContext kanjiDao.getAllKanjis()
         }
 
@@ -52,8 +58,56 @@ class KanjiRepository @Inject constructor(
             onProgress(processed.toFloat() / total)
         }
 
+        markSchemaAsRefreshed()
         kanjiDao.getAllKanjis()
     }
+
+    private suspend fun refreshKanjiUpdated(onProgress: (Float) -> Unit) {
+
+            if (!shouldRefreshSchema()) {
+                return
+            }
+
+            val learnedKanjis = kanjiDao.getLearnedKanjisOnce()
+                .associateBy { it.kanji }
+
+            val joyoKanjis = api.getJoyoKanjis()
+            val total = joyoKanjis.size
+            var processed = 0
+
+            joyoKanjis.chunked(CHUNK_SIZE).forEach { chunk ->
+                val refreshedKanjis = coroutineScope {
+                    chunk.map { kanji ->
+                        async {
+                            fetchReadingMeaningWithRetry(kanji)?.let { apiKanji ->
+                                apiKanji.copy(
+                                    isLearned = learnedKanjis[apiKanji.kanji]?.isLearned == true
+                                )
+                            }
+                        }
+                    }.awaitAll().filterNotNull()
+                }
+
+                kanjiDao.upsertAll(refreshedKanjis)
+
+                processed += chunk.size
+                onProgress(processed.toFloat() / total)
+            }
+
+            markSchemaAsRefreshed()
+        }
+
+        private fun shouldRefreshSchema(): Boolean {
+            val lastRefreshedSchemaVersion =
+                sharedPreferences.getInt(LAST_REFRESHED_SCHEMA_VERSION, 0)
+            return lastRefreshedSchemaVersion < AppDatabase.DATABASE_VERSION
+        }
+
+        private fun markSchemaAsRefreshed() {
+            sharedPreferences.edit {
+                putInt(LAST_REFRESHED_SCHEMA_VERSION, AppDatabase.DATABASE_VERSION)
+            }
+        }
 
     suspend fun toggleLearnedKanji(kanji: String) = withContext(Dispatchers.IO) {
         val isLearned = kanjiDao.isKanjiLearned(kanji)

@@ -363,8 +363,16 @@ fun CameraScreen(
                     if (joyoKanji != null) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            joyoKanji.jlpt?.let { jlpt ->
+                                Text(
+                                    text = "JLPT $jlpt",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             StatusToggleIcon(
                                 isLearned = isLearned,
                                 onToggle = { toggleLearnedKanji = kanji }
@@ -435,7 +443,18 @@ fun CameraScreen(
         AlertDialog(
             onDismissRequest = { detailsKanji = null },
             title = {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    kanji.jlpt?.let { jlpt ->
+                        Text(
+                            text = "JLPT $jlpt",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     StatusToggleIcon(
                         isLearned = isLearned,
                         onToggle = { toggleLearnedKanji = kanji.kanji.first() })
