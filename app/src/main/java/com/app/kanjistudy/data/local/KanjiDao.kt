@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.app.kanjistudy.data.model.KanjiData
 import kotlinx.coroutines.flow.Flow
 
@@ -42,5 +43,17 @@ interface KanjiDao {
 
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
     suspend fun getLearnedKanjisOnce(): List<KanjiData>
+
+    @Query("SELECT kanji FROM kanji_table WHERE kanji IN (:kanjis)")
+    suspend fun getExistingKanjiChars(kanjis: List<String>): List<String>
+
+    @Query("UPDATE kanji_table SET isLearned = 1 WHERE kanji IN (:kanjis)")
+    suspend fun markKanjisAsLearned(kanjis: List<String>): Int
+
+    @Transaction
+    suspend fun importLearnedKanjis(kanjis: List<String>): Int {
+        if (kanjis.isEmpty()) return 0
+        return markKanjisAsLearned(kanjis)
+    }
 
 }

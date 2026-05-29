@@ -483,6 +483,7 @@ fun ImageScanScreen(
                         onboardingManager.markHintShown("image_scan")
                         showImageScanHint = false
                     },
+                    textBottomPadding = 112.dp
                 )
             }
         }
