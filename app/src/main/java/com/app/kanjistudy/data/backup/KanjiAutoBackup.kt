@@ -1,5 +1,6 @@
 package com.app.kanjistudy.data.backup
 
+import android.app.backup.BackupManager
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +17,7 @@ class KanjiAutoBackup @Inject constructor(
 ) {
 
     private val fileMutex = Mutex()
+    private val backupManager = BackupManager(context)
 
     suspend fun readBackupJson(): String? = withContext(Dispatchers.IO) {
         fileMutex.withLock {
@@ -25,9 +27,26 @@ class KanjiAutoBackup @Inject constructor(
         }
     }
 
-    suspend fun writeBackupJson(json: String) = withContext(Dispatchers.IO) {
-        fileMutex.withLock {
-            getBackupFile().writeText(json, Charsets.UTF_8)
+    suspend fun writeBackupJson(json: String) {
+        val didChange = withContext(Dispatchers.IO) {
+            fileMutex.withLock {
+                val backupFile = getBackupFile()
+                if (backupFile.exists() && backupFile.readText(Charsets.UTF_8) == json) {
+                    return@withLock false
+                }
+
+                val tempFile = File(context.filesDir, TEMP_FILE_NAME)
+                tempFile.writeText(json, Charsets.UTF_8)
+                if (!tempFile.renameTo(backupFile)) {
+                    backupFile.writeText(json, Charsets.UTF_8)
+                    tempFile.delete()
+                }
+                true
+            }
+        }
+
+        if (didChange) {
+            backupManager.dataChanged()
         }
     }
 
@@ -35,5 +54,6 @@ class KanjiAutoBackup @Inject constructor(
 
     private companion object {
         const val FILE_NAME = "learned_kanji_auto_backup.json"
+        const val TEMP_FILE_NAME = "$FILE_NAME.tmp"
     }
 }

@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <include
-            domain="file"
-            path="learned_kanji_auto_backup.json" />
+        <include domain="file" path="learned_kanji_auto_backup.json" />
+        <exclude domain="file" path="learned_kanji_auto_backup.json.tmp" />
     </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="learned_kanji_auto_backup.json" />
+        <exclude domain="file" path="learned_kanji_auto_backup.json.tmp" />
+    </device-transfer>
 </data-extraction-rules>

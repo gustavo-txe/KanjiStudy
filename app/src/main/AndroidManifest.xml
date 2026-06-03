@@ -17,6 +17,8 @@
     <application
         android:name=".di.MyApp"
         android:allowBackup="true"
+        android:backupInForeground="true"
+        android:restoreAnyVersion="true"
         android:forceDarkAllowed="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
