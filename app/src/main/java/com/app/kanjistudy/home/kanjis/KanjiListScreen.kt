@@ -1,5 +1,6 @@
 package com.app.kanjistudy.home.kanjis
 
+import android.net.Uri
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -13,14 +14,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,9 +61,9 @@ import com.app.kanjistudy.home.kanjis.components.KanjiLoadingScreen
 import com.app.kanjistudy.home.kanjis.components.SearchBarKanji
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingOverlay
+import com.app.kanjistudy.scan.usecase.googleAISearch
 import kotlin.collections.forEach
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun KanjiListScreen(
     viewModel: KanjiViewModel = hiltViewModel(),
@@ -170,7 +176,7 @@ fun KanjiListScreen(
                         Icon(
                             painter = if (!isLearned) painterResource(id = R.drawable.baseline_add_24)
                             else painterResource(id = R.drawable.checkicon),
-                            contentDescription = "Ícone",
+                            contentDescription = "Learned status",
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(12.dp)
@@ -190,16 +196,7 @@ fun KanjiListScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        clipboardManager.setText(
-                                            AnnotatedString(kanji)
-                                        )
-                                    },
-                                    onLongClick = {
-                                        viewModel.openGoogleSearch(kanji)
-                                    }
-                                )
+                                .clickable { viewModel.onKanjiSelected(kanji) }
                         ) {
                             Text(
                                 text = kanji,
@@ -259,31 +256,47 @@ fun KanjiListScreen(
         }
         when (val currentDialog = dialogType) {
 
-            is KanjiDialog.Google -> {
+            is KanjiDialog.Actions -> {
                 val kanji = currentDialog.kanji
 
                 AlertDialog(
                     onDismissRequest = { dialogType = null },
-                    title = { Text("Open Google?") },
-                    text = { Text("Would you like to search for $kanji on Google?") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            customTab.openCustomTab(
-                                context,
-                                "https://www.google.com/search?q=kanji+$kanji"
+                    title = { Text("Options") },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(
+                                text = "Choose what you want to do with:  $kanji",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            dialogType = null
-                        }) { Text("Yes") }
+                            KanjiActionCard(
+                                icon = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
+                                title = "Copy Kanji",
+                                description = "Copy $kanji to your clipboard.",
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(kanji))
+                                    dialogType = null
+                                }
+                            )
+                            KanjiActionCard(
+                                icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                title = "Search with Google AI",
+                                description = "Open Google to get details using AI",
+                                onClick = {
+                                    customTab.openCustomTab(
+                                        context,
+                                        googleAISearch(kanji)
+                                    )
+                                    dialogType = null
+                                }
+                            )
+                        }
                     },
-                    dismissButton = {
-                        TextButton(onClick = { dialogType = null }) { Text("No") }
+                    confirmButton = {
+                        TextButton(onClick = { dialogType = null }) { Text("Close") }
                     }
                 )
             }
-
-            //clipboardManager.setText(
-            //                        AnnotatedString(event.kanji.toString())
-            //                    )
 
             is KanjiDialog.ToggleLearned -> {
                 val kanji = currentDialog.kanji
@@ -330,4 +343,42 @@ fun KanjiListScreen(
     }
 }
 
+@Composable
+private fun KanjiActionCard(
+    icon: @Composable () -> Unit,
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icon()
+            Spacer(modifier = Modifier.width(14.dp))
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
 

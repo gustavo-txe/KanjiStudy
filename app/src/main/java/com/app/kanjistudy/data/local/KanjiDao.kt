@@ -24,16 +24,19 @@ interface KanjiDao {
     suspend fun upsertAll(kanjis: List<KanjiData>)
 
     @Query("UPDATE kanji_table SET isLearned = 1 WHERE kanji = :kanji")
-    suspend fun markAsLearned(kanji: String) : Int
+    suspend fun markAsLearned(kanji: String): Int
 
     @Query("UPDATE kanji_table SET isLearned = 0 WHERE kanji = :kanji")
-    suspend fun uncheckLearnedKanji(kanji: String) : Int
+    suspend fun uncheckLearnedKanji(kanji: String): Int
+
+    @Query("UPDATE kanji_table SET isLearned = CASE WHEN isLearned = 1 THEN 0 ELSE 1 END WHERE kanji = :kanji")
+    suspend fun toggleLearned(kanji: String): Int
 
     @Query("SELECT isLearned FROM kanji_table WHERE kanji = :kanji LIMIT 1")
     suspend fun isKanjiLearned(kanji: String): Boolean
 
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
-     fun getLearnedKanjis(): Flow<List<KanjiData>>
+    fun getLearnedKanjis(): Flow<List<KanjiData>>
 
     @Query("SELECT * FROM kanji_table WHERE kanji IN (:kanjis)")
     suspend fun getKanjisByChars(kanjis: List<String>): List<KanjiData>
@@ -53,7 +56,13 @@ interface KanjiDao {
     @Transaction
     suspend fun importLearnedKanjis(kanjis: List<String>): Int {
         if (kanjis.isEmpty()) return 0
-        return markKanjisAsLearned(kanjis)
+        return kanjis.chunked(SQLITE_BIND_PARAMETER_LIMIT).sumOf { chunk ->
+            markKanjisAsLearned(chunk)
+        }
+    }
+
+    private companion object {
+        const val SQLITE_BIND_PARAMETER_LIMIT = 500
     }
 
 }

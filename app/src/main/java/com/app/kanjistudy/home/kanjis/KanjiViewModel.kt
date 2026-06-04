@@ -76,8 +76,7 @@ class KanjiViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = "Erro ao carregar kanjis"
-                    )
+                        error = "Error loading kanji"                    )
                 }
             }
 
@@ -172,15 +171,13 @@ class KanjiViewModel @Inject constructor(
         }
     }
 
-    fun openGoogleSearch(kanji: String) {
+    fun onKanjiSelected(kanji: String) {
         viewModelScope.launch {
             _uiEvent.emit(
                 KanjiUiEvent.ShowDialog(
-                    KanjiDialog.Google(kanji)
+                    KanjiDialog.Actions(kanji)
                 )
             )
         }
     }
-
-
 }

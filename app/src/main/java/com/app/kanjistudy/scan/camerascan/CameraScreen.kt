@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -83,18 +82,16 @@ import com.app.kanjistudy.usecase.CustomTab
 import com.app.kanjistudy.R
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.boundsInRoot
 import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.imagescan.ImageKanjiScanActivity
 import com.app.kanjistudy.scan.analyzer.KanjiAnalyzer
+import com.app.kanjistudy.scan.usecase.googleAISearch
 import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
 import kotlin.jvm.java
@@ -154,6 +151,7 @@ fun CameraScreen(
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+
                 ScanUiEvent.KanjiDownloadNotCompleted -> {
                     Toast.makeText(
                         context,
@@ -335,7 +333,7 @@ fun CameraScreen(
 
         if (showScanHint && pauseFabCenterX > 0.dp) {
             OnboardingOverlay(
-                message = "Scan\n\nUse your camera to identify kanji. Tap a kanji for Google details" +
+                message = "Scan\n\nUse your camera to identify kanji. Tap on a kanji to get details using Google AI." +
                         "\n\nClick the button in the bottom-right corner to pause the scan." +
                         "\n\nStylized kanji, decorative fonts\n" +
                         "or image quality can make \n" +
@@ -391,7 +389,7 @@ fun CameraScreen(
                 TextButton(onClick = {
                     dialogKanji = kanji
                     optionsKanji = null
-                }) { Text("Search on Google") }
+                }) { Text("Search with Google AI") }
             },
             dismissButton = {
                 Row {
@@ -415,13 +413,13 @@ fun CameraScreen(
             onDismissRequest = { dialogKanji = null },
             title = { Text("Open Google?") },
             text = {
-                Text("Would you like to search for $kanji on Google?")
+                Text("Would you like to search for $kanji with Google AI?")
             },
             confirmButton = {
                 TextButton(onClick = {
                     customTab.openCustomTab(
                         context,
-                        "https://www.google.com/search?q=kanji+$kanji"
+                        googleAISearch(kanji.toString())
                     )
                     dialogKanji = null
                 }) {
@@ -481,6 +479,17 @@ fun CameraScreen(
             confirmButton = {
                 TextButton(onClick = { detailsKanji = null }) {
                     Text("Close")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    customTab.openCustomTab(
+                        context,
+                        googleAISearch(kanji.kanji)
+                    )
+                    detailsKanji = null
+                }) {
+                    Text("Search with Google AI")
                 }
             }
         )

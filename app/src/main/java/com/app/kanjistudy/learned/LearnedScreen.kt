@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -49,9 +48,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.data.model.KanjiData
-import com.app.kanjistudy.home.kanjis.components.SearchBarKanji
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
+import com.app.kanjistudy.scan.usecase.googleAISearch
+import com.app.kanjistudy.usecase.CustomTab
 
 private const val TOTAL_JOYO_KANJI = 2136
 
@@ -64,6 +64,7 @@ fun LearnedScreen(
 
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
+    val customTab = remember { CustomTab() }
 
     var showRemoveDialog by remember { mutableStateOf(false) }
 
@@ -163,6 +164,17 @@ fun LearnedScreen(
                 confirmButton = {
                     TextButton(onClick = { selectedKanji = null }) {
                         Text("Close")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        customTab.openCustomTab(
+                            context, googleAISearch(kanji.kanji)
+                        )
+                        showRemoveDialog = false
+                        selectedKanji = null
+                    }) {
+                        Text("Search with Google AI")
                     }
                 }
             )

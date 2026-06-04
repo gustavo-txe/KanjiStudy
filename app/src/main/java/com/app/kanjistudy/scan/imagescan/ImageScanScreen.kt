@@ -67,6 +67,7 @@ import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.camerascan.StatusToggleIcon
+import com.app.kanjistudy.scan.usecase.googleAISearch
 import com.app.kanjistudy.usecase.CustomTab
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -363,7 +364,7 @@ fun ImageScanScreen(
                             TextButton(onClick = {
                                 googleKanji = kanji
                                 optionsKanji = null
-                            }) { Text("Search on Google") }
+                            }) { Text("Search with Google AI") }
                         },
                         dismissButton = {
                             Row {
@@ -386,12 +387,12 @@ fun ImageScanScreen(
                     AlertDialog(
                         onDismissRequest = { googleKanji = null },
                         title = { Text("Open Google?") },
-                        text = { Text("Would you like to search for $kanji on Google?") },
+                        text = { Text("Would you like to search for $kanji with Google AI?") },
                         confirmButton = {
                             TextButton(onClick = {
                                 customTab.openCustomTab(
                                     context,
-                                    "https://www.google.com/search?q=kanji+$kanji"
+                                    googleAISearch(kanji.toString())
                                 )
                                 googleKanji = null
                             }) { Text("Yes") }
@@ -447,7 +448,19 @@ fun ImageScanScreen(
                             TextButton(onClick = {
                                 detailsKanji = null
                             }) { Text("Close") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                customTab.openCustomTab(
+                                    context,
+                                    googleAISearch(kanji.kanji)
+                                )
+                                detailsKanji = null
+                            }) {
+                                Text("Search with Google AI")
+                            }
                         }
+
                     )
                 }
                 toggleLearnedKanji?.let { kanji ->
