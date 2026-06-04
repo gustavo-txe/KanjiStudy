@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
@@ -180,7 +182,7 @@ fun AppNavigation(onboardingManager: OnboardingManager, isDarkTheme: Boolean, on
                         }                    }
                 )
 
-                NavigationDrawerItem(icon = { Icon(Icons.Default.Help, null) },
+                NavigationDrawerItem(icon = { Icon(Icons.AutoMirrored.Filled.Help, null) },
                     label = { Text("Help") },
                     selected = false,
                     onClick = { scope.launch { drawerState.close() }; navController.navigate(Screens.Help.route) })
@@ -191,7 +193,7 @@ fun AppNavigation(onboardingManager: OnboardingManager, isDarkTheme: Boolean, on
                     onClick = { scope.launch { drawerState.close() };
                         customTab.openCustomTab(context, "https://sites.google.com/view/kanji-scanner-privacy-policy/home") })
 
-                NavigationDrawerItem(icon = { Icon(Icons.Default.Rule, null) },
+                NavigationDrawerItem(icon = { Icon(Icons.AutoMirrored.Filled.Rule, null) },
                     label = { Text("Terms of Service") },
                     selected = false,
                     onClick = { scope.launch { drawerState.close() };
