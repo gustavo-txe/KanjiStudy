@@ -151,7 +151,6 @@ fun ImageScanScreen(
                         .padding(14.dp),
                 )
 
-
                 ElevatedCard(modifier = Modifier.size(imageSize)) {
                     Box(
                         modifier = Modifier

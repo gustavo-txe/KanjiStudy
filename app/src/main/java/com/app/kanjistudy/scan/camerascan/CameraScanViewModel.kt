@@ -105,7 +105,6 @@ class CameraScanViewModel @Inject constructor(
         }
     }
 
-
     fun onKanjiLongClick(kanji: Char) {
         viewModelScope.launch(analysisDispatcher) {
             _uiEvent.emit(ScanUiEvent.CopyKanji(kanji))
@@ -125,7 +124,6 @@ class CameraScanViewModel @Inject constructor(
             refreshRecognizedMetadata(_uiState.value.kanji)
         }
     }
-
 
     private suspend fun refreshRecognizedMetadata(recognizedText: String) {
         val uniqueKanjis = recognizedText.toSet()

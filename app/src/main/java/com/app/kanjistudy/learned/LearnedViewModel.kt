@@ -29,18 +29,10 @@ class LearnedViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         kanjis = kanjis,
-                        filteredKanjis = applyFilters(kanjis, state.query, state.selectedJlptLevel)                    )
+                        filteredKanjis = applyFilters(kanjis, state.query, state.selectedJlptLevel)
+                    )
                 }
             }
-        }
-    }
-
-    fun onQueryChange(query: String) {
-        _uiState.update { state ->
-            state.copy(
-                query = query,
-                filteredKanjis = applyFilters(state.kanjis, query, state.selectedJlptLevel)
-            )
         }
     }
 
@@ -64,7 +56,12 @@ class LearnedViewModel @Inject constructor(
 
     private fun matchesKanji(kanji: KanjiData, query: String): Boolean {
         if (kanji.kanji == query) return true
-        return (kanji.kunReadings + kanji.onReadings + kanji.meanings).any { exactTermMatch(it, query) }
+        return (kanji.kunReadings + kanji.onReadings + kanji.meanings).any {
+            exactTermMatch(
+                it,
+                query
+            )
+        }
     }
 
     private fun exactTermMatch(value: String, query: String): Boolean {
