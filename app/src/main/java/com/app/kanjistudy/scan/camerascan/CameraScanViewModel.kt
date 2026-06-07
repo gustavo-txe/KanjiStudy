@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.kanjistudy.data.repository.KanjiRepository
 import com.app.kanjistudy.scan.usecase.ScanKanjiUseCase
+import com.app.kanjistudy.scan.usecase.googleAISearch
 import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -110,6 +111,8 @@ class CameraScanViewModel @Inject constructor(
             _uiEvent.emit(ScanUiEvent.CopyKanji(kanji))
         }
     }
+
+    fun googleAiSearchUrl(kanji: String): String = googleAISearch(kanji)
 
     fun toggleLearnedKanji(kanji: Char) {
         viewModelScope.launch(analysisDispatcher) {
