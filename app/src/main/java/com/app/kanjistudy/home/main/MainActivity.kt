@@ -48,7 +48,9 @@ class MainActivity : ComponentActivity() {
         lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 sessionStartTimeMs = System.currentTimeMillis()
-                inAppReviewManager.onAppSessionStarted(sessionStartTimeMs)
+                lifecycleScope.launch {
+                    inAppReviewManager.onAppSessionStarted(sessionStartTimeMs)
+                }
 
                 reviewJob?.cancel()
                 reviewJob = lifecycleScope.launch {

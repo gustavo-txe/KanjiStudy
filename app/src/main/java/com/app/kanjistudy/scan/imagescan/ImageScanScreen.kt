@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,13 +31,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.help.HelpActivity
 import com.app.kanjistudy.home.kanjis.components.HomeTopBar
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.usecase.googleAISearch
 import com.app.kanjistudy.usecase.CustomTab
+import kotlinx.coroutines.launch
 
 private const val IMAGE_SCAN_HINT_KEY = "image_scan"
 
@@ -52,16 +54,18 @@ fun ImageScanScreen(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val customTab = remember { CustomTab() }
+    val coroutineScope = rememberCoroutineScope()
     val imageSize = (configuration.screenWidthDp.dp - 40.dp).coerceIn(220.dp, 520.dp)
     val latestOnImageSelected by rememberUpdatedState(viewModel::onImageSelected)
 
     var pendingToggleKanji by remember { mutableStateOf<Char?>(null) }
     var selectedKanji by remember { mutableStateOf<Char?>(null) }
     var googleKanji by remember { mutableStateOf<Char?>(null) }
-    var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
-    var showImageScanHint by remember {
-        mutableStateOf(onboardingManager.shouldShowHint(IMAGE_SCAN_HINT_KEY))
-    }
+    var detailsKanji by remember { mutableStateOf<Kanji?>(null) }
+    val shouldShowImageScanHint by onboardingManager.shouldShowHint(IMAGE_SCAN_HINT_KEY)
+        .collectAsStateWithLifecycle(initialValue = false)
+    var imageScanHintDismissedInComposition by remember { mutableStateOf(false) }
+    val showImageScanHint = shouldShowImageScanHint && !imageScanHintDismissedInComposition
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -160,8 +164,10 @@ fun ImageScanScreen(
                 OnboardingOverlay(
                     message = "Image Scanner\n\nUse this screen to scan kanji from images.\n\nTap the image card to select a picture from your device. After scanning, recognized kanji appear below. Tap a kanji for actions or long press it to copy.",
                     onDismiss = {
-                        onboardingManager.markHintShown(IMAGE_SCAN_HINT_KEY)
-                        showImageScanHint = false
+                        imageScanHintDismissedInComposition = true
+                        coroutineScope.launch {
+                            onboardingManager.markHintShown(IMAGE_SCAN_HINT_KEY)
+                        }
                     },
                     textBottomPadding = 112.dp,
                 )
@@ -175,11 +181,11 @@ private fun ImageScanDialogs(
     uiState: ImageScanUiState,
     selectedKanji: Char?,
     googleKanji: Char?,
-    detailsKanji: KanjiData?,
+    detailsKanji: Kanji?,
     pendingToggleKanji: Char?,
     onSelectedKanjiChange: (Char?) -> Unit,
     onGoogleKanjiChange: (Char?) -> Unit,
-    onDetailsKanjiChange: (KanjiData?) -> Unit,
+    onDetailsKanjiChange: (Kanji?) -> Unit,
     onPendingToggleKanjiChange: (Char?) -> Unit,
     onCopyKanji: (Char) -> Unit,
     onSearchKanji: (Char) -> Unit,

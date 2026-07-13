@@ -5,6 +5,7 @@ browser = "1.8.0"
 cameraBom = "1.4.0"
 cameraCamera2 = "1.5.2"
 converterGson = "2.11.0"
+datastorePreferences = "1.1.1"
 hiltAndroid = "<version>"
 hiltAndroidGradlePlugin = "2.51.1"
 hiltLifecycleViewmodel = "2.51.1"
@@ -43,6 +44,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx"
 camera-camera2 = { module = "androidx.camera:camera-camera2" }
 camera-core = { module = "androidx.camera:camera-core" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 gms-play-services-ads = { module = "com.google.android.gms:play-services-ads" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-gradle-plugin = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hiltAndroidGradlePlugin" }
@@ -78,4 +80,3 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version = "kotlin" }
 dagger-hilt = { id = "dagger.hilt.android.plugin", version = "2.51.1" }
-

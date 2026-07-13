@@ -5,23 +5,22 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.app.kanjistudy.data.model.KanjiData
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface KanjiDao {
 
     @Query("SELECT * FROM kanji_table")
-    suspend fun getAllKanjis(): List<KanjiData>
+    suspend fun getAllKanjis(): List<KanjiEntity>
 
     @Query("SELECT COUNT(*) FROM kanji_table")
     suspend fun countKanjis(): Int
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertAll(kanjis: List<KanjiData>)
+    suspend fun insertAll(kanjis: List<KanjiEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(kanjis: List<KanjiData>)
+    suspend fun upsertAll(kanjis: List<KanjiEntity>)
 
     @Query("UPDATE kanji_table SET isLearned = 1 WHERE kanji = :kanji")
     suspend fun markAsLearned(kanji: String): Int
@@ -36,16 +35,16 @@ interface KanjiDao {
     suspend fun isKanjiLearned(kanji: String): Boolean
 
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
-    fun getLearnedKanjis(): Flow<List<KanjiData>>
+    fun getLearnedKanjis(): Flow<List<KanjiEntity>>
 
     @Query("SELECT * FROM kanji_table WHERE kanji IN (:kanjis)")
-    suspend fun getKanjisByChars(kanjis: List<String>): List<KanjiData>
+    suspend fun getKanjisByChars(kanjis: List<String>): List<KanjiEntity>
 
     @Query("SELECT COUNT(*) FROM kanji_table WHERE jlpt IS NULL")
     suspend fun countKanjisMissingJlpt(): Int
 
     @Query("SELECT * FROM kanji_table WHERE isLearned = 1")
-    suspend fun getLearnedKanjisOnce(): List<KanjiData>
+    suspend fun getLearnedKanjisOnce(): List<KanjiEntity>
 
     @Query("SELECT kanji FROM kanji_table WHERE kanji IN (:kanjis)")
     suspend fun getExistingKanjiChars(kanjis: List<String>): List<String>

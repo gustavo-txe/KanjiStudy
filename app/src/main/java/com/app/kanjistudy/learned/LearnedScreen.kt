@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,11 +48,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.usecase.googleAISearch
 import com.app.kanjistudy.usecase.CustomTab
+import kotlinx.coroutines.launch
 
 private const val TOTAL_JOYO_KANJI = 2136
 
@@ -65,12 +67,16 @@ fun LearnedScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val customTab = remember { CustomTab() }
+    val coroutineScope = rememberCoroutineScope()
 
     var showRemoveDialog by remember { mutableStateOf(false) }
 
-    var selectedKanji by remember { mutableStateOf<KanjiData?>(null) }
+    var selectedKanji by remember { mutableStateOf<Kanji?>(null) }
 
-    var showLearnedHint by remember { mutableStateOf(onboardingManager.shouldShowHint("learned")) }
+    val shouldShowLearnedHint by onboardingManager.shouldShowHint("learned")
+        .collectAsStateWithLifecycle(initialValue = false)
+    var learnedHintDismissedInComposition by remember { mutableStateOf(false) }
+    val showLearnedHint = shouldShowLearnedHint && !learnedHintDismissedInComposition
 
     Box(modifier = Modifier.fillMaxSize()) {
         selectedKanji?.let { kanji ->
@@ -282,8 +288,10 @@ fun LearnedScreen(
             OnboardingOverlay(
                 message = "Learned Jōyō kanji\n\nThis screen shows all Jōyō kanji you marked as learned so you can track your progress.",
                 onDismiss = {
-                    onboardingManager.markHintShown("learned")
-                    showLearnedHint = false
+                    learnedHintDismissedInComposition = true
+                    coroutineScope.launch {
+                        onboardingManager.markHintShown("learned")
+                    }
                 }
             )
         }

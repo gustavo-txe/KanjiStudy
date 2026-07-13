@@ -16,14 +16,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.scan.camerascan.CameraScanUiState
 
 @Composable
 fun CameraScanDialogs(
     selectedKanji: Char?,
     googleSearchKanji: String?,
-    detailsKanji: KanjiData?,
+    detailsKanji: Kanji?,
     learnedToggleKanji: Char?,
     uiState: CameraScanUiState,
     onDismissSelected: () -> Unit,
@@ -33,7 +33,7 @@ fun CameraScanDialogs(
     onDismissLearnedToggle: () -> Unit,
     onCopyKanji: (Char) -> Unit,
     onOpenGoogleConfirmation: (String) -> Unit,
-    onOpenDetails: (KanjiData) -> Unit,
+    onOpenDetails: (Kanji) -> Unit,
     onLearnedToggleRequest: (Char) -> Unit,
     onConfirmLearnedToggle: (Char) -> Unit,
 ) {
@@ -96,12 +96,12 @@ fun CameraScanDialogs(
 @Composable
 private fun SelectedKanjiDialog(
     kanji: Char,
-    kanjiData: KanjiData?,
+    kanjiData: Kanji?,
     isLearned: Boolean,
     onDismiss: () -> Unit,
     onCopy: () -> Unit,
     onOpenGoogle: () -> Unit,
-    onOpenDetails: (KanjiData) -> Unit,
+    onOpenDetails: (Kanji) -> Unit,
     onToggleLearned: () -> Unit,
 ) {
     AlertDialog(
@@ -155,7 +155,7 @@ private fun GoogleSearchDialog(
 
 @Composable
 private fun KanjiDetailsDialog(
-    kanjiData: KanjiData,
+    kanjiData: Kanji,
     isLearned: Boolean,
     onDismiss: () -> Unit,
     onOpenGoogle: () -> Unit,

@@ -5,9 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.app.kanjistudy.data.model.KanjiData
 
-@Database(entities = [KanjiData::class], version = 2, exportSchema = false)
+@Database(entities = [KanjiEntity::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun kanjiDao(): KanjiDao

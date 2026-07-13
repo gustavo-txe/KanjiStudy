@@ -2,7 +2,7 @@ package com.app.kanjistudy.learned
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +45,7 @@ class LearnedViewModel @Inject constructor(
         }
     }
 
-    private fun applyFilters(kanjis: List<KanjiData>, query: String, level: Int?): List<KanjiData> {
+    private fun applyFilters(kanjis: List<Kanji>, query: String, level: Int?): List<Kanji> {
         val normalizedQuery = query.trim().lowercase()
         return kanjis.filter { kanji ->
             val levelMatches = level == null || kanji.jlpt == level
@@ -54,7 +54,7 @@ class LearnedViewModel @Inject constructor(
         }
     }
 
-    private fun matchesKanji(kanji: KanjiData, query: String): Boolean {
+    private fun matchesKanji(kanji: Kanji, query: String): Boolean {
         if (kanji.kanji == query) return true
         return (kanji.kunReadings + kanji.onReadings + kanji.meanings).any {
             exactTermMatch(

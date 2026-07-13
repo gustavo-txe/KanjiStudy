@@ -1,12 +1,14 @@
 package com.app.kanjistudy.data.repository
 
-import android.content.SharedPreferences
-import androidx.core.content.edit
 import com.app.kanjistudy.data.backup.KanjiAutoBackup
 import com.app.kanjistudy.data.local.AppDatabase
-import com.app.kanjistudy.data.model.KanjiData
 import com.app.kanjistudy.data.local.KanjiDao
+import com.app.kanjistudy.data.local.KanjiEntity
+import com.app.kanjistudy.data.mapper.toDomain
+import com.app.kanjistudy.data.mapper.toEntity
+import com.app.kanjistudy.data.preferences.AppPreferencesRepository
 import com.app.kanjistudy.data.remote.KanjiApiService
+import com.app.kanjistudy.domain.model.Kanji
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -16,6 +18,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -27,7 +30,7 @@ import javax.inject.Singleton
 class KanjiRepository @Inject constructor(
     private val kanjiDao: KanjiDao,
     private val api: KanjiApiService,
-    private val sharedPreferences: SharedPreferences,
+    private val preferencesRepository: AppPreferencesRepository,
     private val kanjiAutoBackup: KanjiAutoBackup
 ) {
 
@@ -45,18 +48,17 @@ class KanjiRepository @Inject constructor(
         const val EXPORT_SCHEMA_VERSION = 1
         const val MAX_RETRIES = 3
         const val RETRY_DELAY_MS = 400L
-        const val LAST_REFRESHED_SCHEMA_VERSION = "last_refreshed_schema_version"
     }
 
     suspend fun ensureAllKanjisLoaded(
         onProgress: (Float) -> Unit
-    ): List<KanjiData> = withContext(ioDispatcher) {
+    ): List<Kanji> = withContext(ioDispatcher) {
 
         val count = kanjiDao.countKanjis()
         if (count >= MIN_KANJI_COUNT) {
             refreshKanjiUpdated(onProgress = onProgress)
             restoreLearnedKanjisFromAutoBackup()
-            return@withContext kanjiDao.getAllKanjis()
+            return@withContext kanjiDao.getAllKanjis().map { it.toDomain() }
         }
 
         val joyoKanjis = api.getJoyoKanjis()
@@ -80,7 +82,7 @@ class KanjiRepository @Inject constructor(
 
         markSchemaAsRefreshed()
         restoreLearnedKanjisFromAutoBackup()
-        kanjiDao.getAllKanjis()
+        kanjiDao.getAllKanjis().map { it.toDomain() }
     }
 
     private suspend fun refreshKanjiUpdated(onProgress: (Float) -> Unit) {
@@ -99,9 +101,9 @@ class KanjiRepository @Inject constructor(
             val refreshedKanjis = coroutineScope {
                 chunk.map { kanji ->
                     async {
-                        fetchReadingMeaningWithRetry(kanji)?.let { apiKanji ->
-                            apiKanji.copy(
-                                isLearned = learnedKanjis[apiKanji.kanji]?.isLearned == true
+                        fetchReadingMeaningWithRetry(kanji)?.let { kanjiEntity ->
+                            kanjiEntity.copy(
+                                isLearned = learnedKanjis[kanjiEntity.kanji]?.isLearned == true
                             )
                         }
                     }
@@ -117,16 +119,12 @@ class KanjiRepository @Inject constructor(
         markSchemaAsRefreshed()
     }
 
-    private fun shouldRefreshSchema(): Boolean {
-        val lastRefreshedSchemaVersion =
-            sharedPreferences.getInt(LAST_REFRESHED_SCHEMA_VERSION, 0)
-        return lastRefreshedSchemaVersion < AppDatabase.DATABASE_VERSION
+    private suspend fun shouldRefreshSchema(): Boolean {
+        return preferencesRepository.shouldRefreshSchema(AppDatabase.DATABASE_VERSION)
     }
 
-    private fun markSchemaAsRefreshed() {
-        sharedPreferences.edit {
-            putInt(LAST_REFRESHED_SCHEMA_VERSION, AppDatabase.DATABASE_VERSION)
-        }
+    private suspend fun markSchemaAsRefreshed() {
+        preferencesRepository.markSchemaAsRefreshed(AppDatabase.DATABASE_VERSION)
     }
 
     suspend fun toggleLearnedKanji(kanji: String) = withContext(ioDispatcher) {
@@ -241,21 +239,22 @@ class KanjiRepository @Inject constructor(
         }
     }
 
-    fun getLearnedKanjis(): Flow<List<KanjiData>> = kanjiDao.getLearnedKanjis()
+    fun getLearnedKanjis(): Flow<List<Kanji>> =
+        kanjiDao.getLearnedKanjis().map { kanjis -> kanjis.map { it.toDomain() } }
 
-    suspend fun getKanjisByChars(kanjis: Set<Char>): List<KanjiData> = withContext(ioDispatcher) {
+    suspend fun getKanjisByChars(kanjis: Set<Char>): List<Kanji> = withContext(ioDispatcher) {
         if (kanjis.isEmpty()) return@withContext emptyList()
-        kanjiDao.getKanjisByChars(kanjis.map { it.toString() })
+        kanjiDao.getKanjisByChars(kanjis.map { it.toString() }).map { it.toDomain() }
     }
 
     suspend fun isKanjiDownloadComplete(): Boolean = withContext(ioDispatcher) {
         kanjiDao.countKanjis() >= MIN_KANJI_COUNT
     }
 
-    private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiData? {
+    private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiEntity? {
         repeat(MAX_RETRIES) { attempt ->
             runCatching {
-                return api.getReadingMeaning(kanji)
+                return api.getReadingMeaning(kanji).toEntity()
             }
 
             if (attempt < MAX_RETRIES - 1) {

@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.kanjistudy.R
 import com.app.kanjistudy.onboarding.OnboardingHighlight
 import com.app.kanjistudy.onboarding.OnboardingManager
@@ -69,6 +71,7 @@ import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.camerascan.CameraScanUiState
 import com.app.kanjistudy.scan.imagescan.ImageKanjiScanActivity
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private var hasShownScanInstructionsInProcess = false
 
@@ -82,8 +85,12 @@ fun CameraScanContent(
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
 
-    var showScanHint by remember { mutableStateOf(onboardingManager.shouldShowHint("scan")) }
+    val shouldShowScanHint by onboardingManager.shouldShowHint("scan")
+        .collectAsStateWithLifecycle(initialValue = false)
+    var scanHintDismissedInComposition by remember { mutableStateOf(false) }
+    val showScanHint = shouldShowScanHint && !scanHintDismissedInComposition
     var showScanInstructions by remember { mutableStateOf(!hasShownScanInstructionsInProcess) }
     var instructionBounds by remember { mutableStateOf<Rect?>(null) }
     var pauseFabCenterX by remember { mutableStateOf(0.dp) }
@@ -151,8 +158,10 @@ fun CameraScanContent(
                         "\n\nTap the bottom-right button to pause the scan." +
                         "\n\nStylized kanji, decorative fonts, or image quality can make identification more difficult.",
                 onDismiss = {
-                    onboardingManager.markHintShown("scan")
-                    showScanHint = false
+                    scanHintDismissedInComposition = true
+                    coroutineScope.launch {
+                        onboardingManager.markHintShown("scan")
+                    }
                 },
                 highlight = OnboardingHighlight(
                     centerX = pauseFabCenterX,

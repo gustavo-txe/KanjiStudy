@@ -24,7 +24,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.scan.camerascan.components.CameraScanContent
 import com.app.kanjistudy.scan.camerascan.components.CameraScanDialogs
@@ -52,7 +52,7 @@ fun CameraScreen(
 
     var selectedKanji by remember { mutableStateOf<Char?>(null) }
     var googleSearchKanji by remember { mutableStateOf<String?>(null) }
-    var detailsKanji by remember { mutableStateOf<KanjiData?>(null) }
+    var detailsKanji by remember { mutableStateOf<Kanji?>(null) }
     var learnedToggleKanji by remember { mutableStateOf<Char?>(null) }
 
     LaunchedEffect(viewModel) {

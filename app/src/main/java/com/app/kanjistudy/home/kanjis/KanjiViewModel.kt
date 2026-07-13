@@ -2,7 +2,7 @@ package com.app.kanjistudy.home.kanjis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +33,7 @@ class KanjiViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<KanjiUiEvent>()
     val uiEvent: SharedFlow<KanjiUiEvent?> = _uiEvent.asSharedFlow()
 
-    val learnedKanjis: StateFlow<List<KanjiData>> = repository.getLearnedKanjis()
+    val learnedKanjis: StateFlow<List<Kanji>> = repository.getLearnedKanjis()
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),
@@ -63,7 +63,7 @@ class KanjiViewModel @Inject constructor(
                 updateMaps(localData)
 
                 _uiState.update {
-                    val joyoKanjis = localData.map { kanjiData -> kanjiData.kanji }
+                    val joyoKanjis = localData.map { kanji -> kanji.kanji }
                     it.copy(
                         joyoKanjis = joyoKanjis,
                         isLoading = false,
@@ -83,7 +83,7 @@ class KanjiViewModel @Inject constructor(
         }
     }
 
-    private fun updateMaps(data: List<KanjiData>) {
+    private fun updateMaps(data: List<Kanji>) {
         _uiState.update {
             it.copy(
                 kunReadings = data.associate { it.kanji to it.kunReadings },

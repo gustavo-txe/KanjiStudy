@@ -17,17 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.kanjistudy.data.model.KanjiData
+import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.scan.camerascan.components.StatusToggleIcon
 
 @Composable
 internal fun KanjiOptionsDialog(
     kanji: Char,
-    joyoKanji: KanjiData?,
+    joyoKanji: Kanji?,
     isLearned: Boolean,
     onDismiss: () -> Unit,
     onCopy: () -> Unit,
-    onDetails: (KanjiData) -> Unit,
+    onDetails: (Kanji) -> Unit,
     onSearch: () -> Unit,
     onToggleLearned: () -> Unit,
 ) {
@@ -105,7 +105,7 @@ internal fun GoogleSearchDialog(
 
 @Composable
 internal fun KanjiDetailsDialog(
-    kanji: KanjiData,
+    kanji: Kanji,
     isLearned: Boolean,
     onDismiss: () -> Unit,
     onSearch: () -> Unit,

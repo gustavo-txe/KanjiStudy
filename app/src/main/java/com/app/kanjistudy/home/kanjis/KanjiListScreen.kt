@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ import com.app.kanjistudy.home.kanjis.components.KanjiLoadingScreen
 import com.app.kanjistudy.home.kanjis.components.SearchBarKanji
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.usecase.googleAISearch
+import kotlinx.coroutines.launch
 import kotlin.collections.forEach
 
 @Composable
@@ -65,6 +67,7 @@ fun KanjiListScreen(
     val context = LocalContext.current
     val customTab = remember { CustomTab() }
     val clipboardManager = LocalClipboardManager.current
+    val coroutineScope = rememberCoroutineScope()
 
     val kanjisKunMap = uiState.kunReadings
     val kanjisOnMap = uiState.onReadings
@@ -78,7 +81,10 @@ fun KanjiListScreen(
 
     var dialogType by remember { mutableStateOf<KanjiDialog?>(null) }
 
-    var showHomeHint by remember { mutableStateOf(onboardingManager.shouldShowHint("home")) }
+    val shouldShowHomeHint by onboardingManager.shouldShowHint("home")
+        .collectAsStateWithLifecycle(initialValue = false)
+    var homeHintDismissedInComposition by remember { mutableStateOf(false) }
+    val showHomeHint = shouldShowHomeHint && !homeHintDismissedInComposition
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -95,7 +101,7 @@ fun KanjiListScreen(
     LaunchedEffect(uiState.isLoading, showHomeHint) {
         if (!uiState.isLoading && showHomeHint) {
             onboardingManager.markHintShown("home")
-            showHomeHint = false
+            homeHintDismissedInComposition = true
         }
     }
 
@@ -331,8 +337,10 @@ fun KanjiListScreen(
                         "This quick tutorial will guide you through the app’s features.\n\n" +
                         "This is the Home Screen. Wait for the download progress bar to finish. Once it’s complete, you can search for kanji and mark or unmark them as learned.\n\n",
                 onDismiss = {
-                    onboardingManager.markHintShown("home")
-                    showHomeHint = false
+                    homeHintDismissedInComposition = true
+                    coroutineScope.launch {
+                        onboardingManager.markHintShown("home")
+                    }
                 }
             )
         }
