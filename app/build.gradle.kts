@@ -16,9 +16,9 @@ android {
     defaultConfig {
         applicationId = "com.app.kanjistudy"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 11
-        versionName = "1.2.0"
+        targetSdk = 36
+        versionCode = 14
+        versionName = "1.2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -116,6 +116,8 @@ dependencies {
     // ML Kit Text Recognition
     implementation ("com.google.mlkit:text-recognition:16.0.1")
     implementation ("com.google.mlkit:text-recognition-japanese:16.0.1")
+    // Google Play services document editor used to clean up gallery images before OCR.
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
     implementation("com.google.mlkit:translate:17.0.3")
     implementation("androidx.camera:camera-mlkit-vision:1.4.0")
     

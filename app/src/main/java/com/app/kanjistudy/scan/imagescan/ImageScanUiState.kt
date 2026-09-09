@@ -5,6 +5,7 @@ import com.app.kanjistudy.domain.model.Kanji
 
 data class ImageScanUiState(
     val selectedImageUri: Uri? = null,
+    val isSelectingImage: Boolean = false,
     val isLoading: Boolean = false,
     val recognizedKanji: String = "",
     val message: String? = null,

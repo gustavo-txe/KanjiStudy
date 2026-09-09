@@ -120,7 +120,7 @@ fun KanjiListScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         KanjiLoadingScreen(
-            viewModel = viewModel,
+            uiState = uiState,
             modifier = Modifier
         )
 

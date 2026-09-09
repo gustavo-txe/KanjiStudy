@@ -80,7 +80,7 @@ internal fun ImageScanHeader() {
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "Select an image and detect Japanese kanji without blocking your study flow.",
+            text = "Select an image to detect kanji. Image quality and font style may affect results.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -149,7 +149,7 @@ private fun EmptyImageState() {
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "Clear, high-contrast images produce the best results.",
+            text = "You can crop and enhance the image before recognition.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -259,7 +259,11 @@ internal fun ImageScanActions(
 }
 
 @Composable
-internal fun ScanStatus(isLoading: Boolean, message: String?) {
+internal fun ScanStatus(
+    isLoading: Boolean,
+    isSelectingImage: Boolean,
+    message: String?,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -277,7 +281,7 @@ internal fun ScanStatus(isLoading: Boolean, message: String?) {
                     strokeWidth = 2.dp,
                 )
                 Text(
-                    text = "Analyzing image...",
+                    text = if (isSelectingImage) "Opening image editor..." else "Analyzing image...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

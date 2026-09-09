@@ -6,6 +6,7 @@ import com.app.kanjistudy.domain.model.Kanji
 import com.app.kanjistudy.data.repository.KanjiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,11 +73,14 @@ class KanjiViewModel @Inject constructor(
                     )
                 }
 
-            } catch (e: Exception) {
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = "Error loading kanji"                    )
+                        error = "Unable to download kanji. Check your connection and try again."
+                    )
                 }
             }
 

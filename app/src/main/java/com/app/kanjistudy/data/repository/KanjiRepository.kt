@@ -13,6 +13,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -63,6 +64,9 @@ class KanjiRepository @Inject constructor(
 
         val joyoKanjis = api.getJoyoKanjis()
         val total = joyoKanjis.size
+        check(total >= MIN_KANJI_COUNT) {
+            "The kanji API returned an incomplete Joyo kanji list."
+        }
         var processed = 0
 
         joyoKanjis.chunked(CHUNK_SIZE).forEach { chunk ->
@@ -71,13 +75,17 @@ class KanjiRepository @Inject constructor(
                     async {
                         fetchReadingMeaningWithRetry(kanji)
                     }
-                }.awaitAll().filterNotNull()
+                }.awaitAll()
             }
 
             kanjiDao.insertAll(kanjiData)
 
             processed += chunk.size
             onProgress(processed.toFloat() / total)
+        }
+
+        check(kanjiDao.countKanjis() >= MIN_KANJI_COUNT) {
+            "The kanji download completed with missing entries."
         }
 
         markSchemaAsRefreshed()
@@ -101,13 +109,12 @@ class KanjiRepository @Inject constructor(
             val refreshedKanjis = coroutineScope {
                 chunk.map { kanji ->
                     async {
-                        fetchReadingMeaningWithRetry(kanji)?.let { kanjiEntity ->
-                            kanjiEntity.copy(
-                                isLearned = learnedKanjis[kanjiEntity.kanji]?.isLearned == true
-                            )
-                        }
+                        val kanjiEntity = fetchReadingMeaningWithRetry(kanji)
+                        kanjiEntity.copy(
+                            isLearned = learnedKanjis[kanjiEntity.kanji]?.isLearned == true
+                        )
                     }
-                }.awaitAll().filterNotNull()
+                }.awaitAll()
             }
 
             kanjiDao.upsertAll(refreshedKanjis)
@@ -251,10 +258,16 @@ class KanjiRepository @Inject constructor(
         kanjiDao.countKanjis() >= MIN_KANJI_COUNT
     }
 
-    private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiEntity? {
+    private suspend fun fetchReadingMeaningWithRetry(kanji: String): KanjiEntity {
+        var lastFailure: Throwable? = null
+
         repeat(MAX_RETRIES) { attempt ->
-            runCatching {
+            try {
                 return api.getReadingMeaning(kanji).toEntity()
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                lastFailure = exception
             }
 
             if (attempt < MAX_RETRIES - 1) {
@@ -262,7 +275,7 @@ class KanjiRepository @Inject constructor(
             }
         }
 
-        return null
+        throw KanjiDownloadException(kanji, lastFailure)
     }
 
 }
@@ -271,6 +284,11 @@ data class LearnedKanjiImportResult(
     val importedCount: Int,
     val skippedCount: Int
 )
+
+private class KanjiDownloadException(
+    kanji: String,
+    cause: Throwable?
+) : Exception("Unable to download data for kanji $kanji.", cause)
 
 private data class LearnedKanjiExport(
     val version: Int,

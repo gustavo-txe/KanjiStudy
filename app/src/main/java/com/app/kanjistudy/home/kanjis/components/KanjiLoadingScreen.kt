@@ -16,19 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.kanjistudy.home.kanjis.KanjiViewModel
+import com.app.kanjistudy.home.kanjis.KanjiUiState
 
 @Composable
 fun KanjiLoadingScreen(
-    viewModel: KanjiViewModel = hiltViewModel(),
+    uiState: KanjiUiState,
     modifier: Modifier = Modifier
 ) {
-    val progress = viewModel.uiState.collectAsStateWithLifecycle().value.loadingProgress
-    val isLoading = viewModel.uiState.collectAsStateWithLifecycle().value.isLoading
-
-    if (isLoading) {
+    if (uiState.isLoading) {
         Column(
             modifier = modifier
                 .padding(32.dp),
@@ -36,7 +31,7 @@ fun KanjiLoadingScreen(
             verticalArrangement = Arrangement.Center
         ) {
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { uiState.loadingProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp),
@@ -61,12 +56,20 @@ fun KanjiLoadingScreen(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "${(progress * 100).toInt()}%",
+                        text = "${(uiState.loadingProgress * 100).toInt()}%",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
             }
+        }
+    } else {
+        uiState.error?.let { error ->
+            Text(
+                text = error,
+                modifier = modifier.padding(32.dp),
+                fontSize = 16.sp
+            )
         }
     }
 }

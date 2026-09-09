@@ -1,9 +1,12 @@
 package com.app.kanjistudy.scan.imagescan
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.ContextWrapper
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +41,9 @@ import com.app.kanjistudy.onboarding.OnboardingManager
 import com.app.kanjistudy.onboarding.OnboardingOverlay
 import com.app.kanjistudy.scan.usecase.googleAISearch
 import com.app.kanjistudy.usecase.CustomTab
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import kotlinx.coroutines.launch
 
 private const val IMAGE_SCAN_HINT_KEY = "image_scan"
@@ -57,6 +63,7 @@ fun ImageScanScreen(
     val coroutineScope = rememberCoroutineScope()
     val imageSize = (configuration.screenWidthDp.dp - 40.dp).coerceIn(220.dp, 520.dp)
     val latestOnImageSelected by rememberUpdatedState(viewModel::onImageSelected)
+    val latestOnImagePickerFinished by rememberUpdatedState(viewModel::onImagePickerFinished)
 
     var pendingToggleKanji by remember { mutableStateOf<Char?>(null) }
     var selectedKanji by remember { mutableStateOf<Char?>(null) }
@@ -71,12 +78,51 @@ fun ImageScanScreen(
         contract = ActivityResultContracts.GetContent(),
     ) { uri ->
         uri?.let(latestOnImageSelected)
+        latestOnImagePickerFinished()
+    }
+    val documentScanner = remember {
+        GmsDocumentScanning.getClient(
+            GmsDocumentScannerOptions.Builder()
+                .setGalleryImportAllowed(true)
+                .setPageLimit(1)
+                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                .build(),
+        )
+    }
+    val documentScannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+                ?.pages
+                ?.firstOrNull()
+                ?.imageUri
+                ?.let(latestOnImageSelected)
+        }
+        latestOnImagePickerFinished()
     }
 
-    LaunchedEffect(viewModel.uiEvent, galleryLauncher, context) {
+    LaunchedEffect(viewModel.uiEvent, galleryLauncher, documentScannerLauncher, context) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                ImageKanjiScanUiEvent.LaunchGalleryPicker -> galleryLauncher.launch("image/*")
+                ImageKanjiScanUiEvent.LaunchDocumentScanner -> {
+                    val activity = context.findActivity()
+                    if (activity == null) {
+                        galleryLauncher.launch("image/*")
+                    } else {
+                        documentScanner.getStartScanIntent(activity)
+                            .addOnSuccessListener(activity) { intentSender ->
+                                documentScannerLauncher.launch(
+                                    IntentSenderRequest.Builder(intentSender).build(),
+                                )
+                            }
+                            .addOnFailureListener(activity) {
+                                // Unsupported devices and unavailable Play services retain the legacy flow.
+                                galleryLauncher.launch("image/*")
+                            }
+                    }
+                }
                 ImageKanjiScanUiEvent.KanjiDownloadNotCompleted -> Toast.makeText(
                     context,
                     "Please wait until the kanji download is complete before marking a kanji as learned.",
@@ -114,20 +160,21 @@ fun ImageScanScreen(
 
                 ImageSelectionCard(
                     selectedImageUri = uiState.selectedImageUri,
-                    isLoading = uiState.isLoading,
+                    isLoading = uiState.isLoading || uiState.isSelectingImage,
                     imageSize = imageSize,
                     onSelectImage = viewModel::onScanImageClick,
                 )
 
                 ImageScanActions(
                     hasImage = uiState.selectedImageUri != null,
-                    isLoading = uiState.isLoading,
+                    isLoading = uiState.isLoading || uiState.isSelectingImage,
                     onRetry = viewModel::retryScan,
                     onRemove = viewModel::removeImage,
                 )
 
                 ScanStatus(
-                    isLoading = uiState.isLoading,
+                    isLoading = uiState.isLoading || uiState.isSelectingImage,
+                    isSelectingImage = uiState.isSelectingImage,
                     message = uiState.message,
                 )
 
@@ -174,6 +221,12 @@ fun ImageScanScreen(
             }
         }
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable

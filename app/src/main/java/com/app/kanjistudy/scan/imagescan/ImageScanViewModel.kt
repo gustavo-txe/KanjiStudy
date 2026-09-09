@@ -51,15 +51,23 @@ class ImageScanViewModel @Inject constructor(
     }
 
     fun onScanImageClick() {
+        if (_uiState.value.isSelectingImage || _uiState.value.isLoading) return
+
+        _uiState.update { it.copy(isSelectingImage = true) }
         viewModelScope.launch {
-            _uiEvent.emit(ImageKanjiScanUiEvent.LaunchGalleryPicker)
+            _uiEvent.emit(ImageKanjiScanUiEvent.LaunchDocumentScanner)
         }
+    }
+
+    fun onImagePickerFinished() {
+        _uiState.update { it.copy(isSelectingImage = false) }
     }
 
     fun onImageSelected(uri: Uri) {
         _uiState.update {
             it.copy(
                 selectedImageUri = uri,
+                isSelectingImage = false,
                 message = null,
                 recognizedKanji = "",
                 recognizedJoyoKanjis = emptyMap(),
@@ -103,6 +111,7 @@ class ImageScanViewModel @Inject constructor(
         scanJob = viewModelScope.launch(scanDispatcher) {
             _uiState.update {
                 it.copy(
+                    isSelectingImage = false,
                     isLoading = true,
                     message = null,
                     recognizedKanji = "",
@@ -166,6 +175,6 @@ class ImageScanViewModel @Inject constructor(
 }
 
 sealed interface ImageKanjiScanUiEvent {
-    data object LaunchGalleryPicker : ImageKanjiScanUiEvent
+    data object LaunchDocumentScanner : ImageKanjiScanUiEvent
     data object KanjiDownloadNotCompleted : ImageKanjiScanUiEvent
 }
