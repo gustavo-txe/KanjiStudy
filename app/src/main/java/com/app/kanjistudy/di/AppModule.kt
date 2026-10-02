@@ -7,17 +7,17 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
-import com.app.kanjistudy.data.remote.KanjiApiService
 import com.app.kanjistudy.data.local.AppDatabase
 import com.app.kanjistudy.data.local.KanjiDao
+import com.app.kanjistudy.data.remote.KanjiApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -58,7 +58,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "kanji_table"
-        ).addMigrations(AppDatabase.MIGRATION_1_2)
+        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 

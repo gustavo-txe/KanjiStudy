@@ -2,11 +2,8 @@ package com.app.kanjistudy.data.backup
 
 import android.app.backup.BackupManager
 import android.content.Context
+import com.app.kanjistudy.di.IoDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
@@ -16,17 +13,22 @@ import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 @Singleton
 class KanjiAutoBackup @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext context: Context,
+    @IoDispatcher private val dispatcher: CoroutineDispatcher
 ) {
 
     private val appContext = context.applicationContext
     private val fileMutex = Mutex()
     private val backupManager by lazy(LazyThreadSafetyMode.NONE) { BackupManager(appContext) }
 
-    suspend fun readBackupJson(): String? = withContext(Dispatchers.IO) {
+    suspend fun readBackupJson(): String? = withContext(dispatcher) {
         fileMutex.withLock {
             val backupFile = getBackupFile()
             if (!backupFile.isFile || backupFile.length() == 0L) return@withLock null
@@ -37,7 +39,7 @@ class KanjiAutoBackup @Inject constructor(
         }
     }
 
-    suspend fun writeBackupJson(json: String) = withContext(Dispatchers.IO) {
+    suspend fun writeBackupJson(json: String) = withContext(dispatcher) {
         val didChange = fileMutex.withLock {
             val backupFile = getBackupFile()
             if (backupFile.isFile && backupFile.readText(Charsets.UTF_8) == json) {

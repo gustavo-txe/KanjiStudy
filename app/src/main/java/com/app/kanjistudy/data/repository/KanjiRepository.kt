@@ -1,48 +1,55 @@
 package com.app.kanjistudy.data.repository
 
 import com.app.kanjistudy.data.backup.KanjiAutoBackup
-import com.app.kanjistudy.data.local.AppDatabase
 import com.app.kanjistudy.data.local.KanjiDao
 import com.app.kanjistudy.data.local.KanjiEntity
 import com.app.kanjistudy.data.mapper.toDomain
 import com.app.kanjistudy.data.mapper.toEntity
 import com.app.kanjistudy.data.preferences.AppPreferencesRepository
 import com.app.kanjistudy.data.remote.KanjiApiService
+import com.app.kanjistudy.di.IoDispatcher
 import com.app.kanjistudy.domain.model.Kanji
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import kotlinx.coroutines.CoroutineDispatcher
+import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class KanjiRepository @Inject constructor(
     private val kanjiDao: KanjiDao,
     private val api: KanjiApiService,
     private val preferencesRepository: AppPreferencesRepository,
-    private val kanjiAutoBackup: KanjiAutoBackup
+    private val kanjiAutoBackup: KanjiAutoBackup,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
 
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
     private val learnedKanjiMutex = Mutex()
-    private val gson = Gson()
+    private val _isAutoBackupPending = MutableStateFlow(false)
+    val isAutoBackupPending = _isAutoBackupPending.asStateFlow()
     private val prettyGson = GsonBuilder()
         .setPrettyPrinting()
         .create()
 
     private companion object {
+        const val CATALOG_VERSION = 2
         const val MIN_KANJI_COUNT = 2136
         const val CHUNK_SIZE = 40
         const val SQLITE_BIND_PARAMETER_LIMIT = 500
@@ -57,7 +64,13 @@ class KanjiRepository @Inject constructor(
 
         val count = kanjiDao.countKanjis()
         if (count >= MIN_KANJI_COUNT) {
-            refreshKanjiUpdated(onProgress = onProgress)
+            try {
+                refreshKanjiUpdated(onProgress = onProgress)
+            } catch (exception: IOException) {
+                // A failed network refresh must not hide the downloaded catalog.
+            } catch (exception: HttpException) {
+                // Keep the refresh pending so a later load can try again.
+            }
             restoreLearnedKanjisFromAutoBackup()
             return@withContext kanjiDao.getAllKanjis().map { it.toDomain() }
         }
@@ -98,26 +111,23 @@ class KanjiRepository @Inject constructor(
             return
         }
 
-        val learnedKanjis = kanjiDao.getLearnedKanjisOnce()
-            .associateBy { it.kanji }
-
         val joyoKanjis = api.getJoyoKanjis()
         val total = joyoKanjis.size
         var processed = 0
+        check(total >= MIN_KANJI_COUNT) {
+            "The kanji API returned an incomplete Joyo kanji list."
+        }
 
         joyoKanjis.chunked(CHUNK_SIZE).forEach { chunk ->
             val refreshedKanjis = coroutineScope {
                 chunk.map { kanji ->
                     async {
-                        val kanjiEntity = fetchReadingMeaningWithRetry(kanji)
-                        kanjiEntity.copy(
-                            isLearned = learnedKanjis[kanjiEntity.kanji]?.isLearned == true
-                        )
+                        fetchReadingMeaningWithRetry(kanji)
                     }
                 }.awaitAll()
             }
 
-            kanjiDao.upsertAll(refreshedKanjis)
+            kanjiDao.refreshMetadata(refreshedKanjis)
 
             processed += chunk.size
             onProgress(processed.toFloat() / total)
@@ -127,22 +137,26 @@ class KanjiRepository @Inject constructor(
     }
 
     private suspend fun shouldRefreshSchema(): Boolean {
-        return preferencesRepository.shouldRefreshSchema(AppDatabase.DATABASE_VERSION)
+        return preferencesRepository.shouldRefreshSchema(CATALOG_VERSION)
     }
 
     private suspend fun markSchemaAsRefreshed() {
-        preferencesRepository.markSchemaAsRefreshed(AppDatabase.DATABASE_VERSION)
+        preferencesRepository.markSchemaAsRefreshed(CATALOG_VERSION)
     }
 
     suspend fun toggleLearnedKanji(kanji: String) = withContext(ioDispatcher) {
         learnedKanjiMutex.withLock {
+            ensureProgressReadyLocked()
             kanjiDao.toggleLearned(kanji)
             syncLearnedKanjisToAutoBackupLocked()
         }
     }
 
     suspend fun exportLearnedKanjisJson(): String = withContext(ioDispatcher) {
-        buildLearnedKanjisJson()
+        learnedKanjiMutex.withLock {
+            ensureProgressReadyLocked()
+            buildLearnedKanjisJson()
+        }
     }
 
     suspend fun importLearnedKanjisJson(json: String): LearnedKanjiImportResult =
@@ -154,32 +168,47 @@ class KanjiRepository @Inject constructor(
             }
 
             learnedKanjiMutex.withLock {
+                ensureProgressReadyLocked()
                 val result = importLearnedKanjiList(importedKanjis)
                 syncLearnedKanjisToAutoBackupLocked()
                 result
             }
         }
 
-    private suspend fun restoreLearnedKanjisFromAutoBackup() {
-        learnedKanjiMutex.withLock {
-            val backupJson = runCatching { kanjiAutoBackup.readBackupJson() }
-                .getOrNull()
-
-            if (backupJson == null) {
-                syncLearnedKanjisToAutoBackupLocked()
-                return
-            }
-
-            val backupKanjis = runCatching {
-                normalizeLearnedKanjis(parseLearnedKanjiJson(backupJson))
-            }.getOrNull()
-
-            if (!backupKanjis.isNullOrEmpty()) {
-                importLearnedKanjiList(backupKanjis)
-            }
-
-            syncLearnedKanjisToAutoBackupLocked()
+    private suspend fun ensureProgressReadyLocked() {
+        if (kanjiDao.countKanjis() < MIN_KANJI_COUNT) {
+            throw KanjiCatalogIncompleteException()
         }
+        if (!kanjiDao.isProgressInitialized() && !restoreLearnedKanjisLocked()) {
+            throw ProgressRestorationPendingException()
+        }
+    }
+
+    private suspend fun restoreLearnedKanjisFromAutoBackup() {
+        learnedKanjiMutex.withLock { restoreLearnedKanjisLocked() }
+    }
+
+    private suspend fun restoreLearnedKanjisLocked(): Boolean {
+        if (kanjiDao.isProgressInitialized()) {
+            syncLearnedKanjisToAutoBackupLocked()
+            return true
+        }
+        val backupJson = try {
+            kanjiAutoBackup.readBackupJson()
+        } catch (exception: IOException) {
+            return false
+        }
+        val backupKanjis = try {
+            backupJson?.let { normalizeLearnedKanjis(parseLearnedKanjiJson(it)) }.orEmpty()
+        } catch (exception: IllegalArgumentException) {
+            return false
+        }
+        // Restore every saved character before allowing the backup to be replaced.
+        if (getExistingKanjiChars(backupKanjis).size != backupKanjis.size) return false
+        kanjiDao.restoreProgress(backupKanjis)
+
+        syncLearnedKanjisToAutoBackupLocked()
+        return true
     }
 
     private suspend fun importLearnedKanjiList(importedKanjis: List<String>): LearnedKanjiImportResult {
@@ -187,10 +216,7 @@ class KanjiRepository @Inject constructor(
             return LearnedKanjiImportResult(importedCount = 0, skippedCount = 0)
         }
 
-        val existingKanjis = importedKanjis
-            .chunked(SQLITE_BIND_PARAMETER_LIMIT)
-            .flatMap { chunk -> kanjiDao.getExistingKanjiChars(chunk) }
-            .toSet()
+        val existingKanjis = getExistingKanjiChars(importedKanjis)
         val validKanjis = importedKanjis.filter { it in existingKanjis }
         val importedCount = kanjiDao.importLearnedKanjis(validKanjis)
 
@@ -200,9 +226,28 @@ class KanjiRepository @Inject constructor(
         )
     }
 
+    private suspend fun getExistingKanjiChars(kanjis: List<String>): Set<String> = kanjis
+        .chunked(SQLITE_BIND_PARAMETER_LIMIT)
+        .flatMap { chunk -> kanjiDao.getExistingKanjiChars(chunk) }
+        .toSet()
+
     private suspend fun syncLearnedKanjisToAutoBackupLocked() {
-        val backupJson = buildLearnedKanjisJson()
-        runCatching { kanjiAutoBackup.writeBackupJson(backupJson) }
+        try {
+            kanjiAutoBackup.writeBackupJson(buildLearnedKanjisJson())
+            _isAutoBackupPending.value = false
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (_: Exception) {
+            // The database remains authoritative; retry must never repeat a toggle/import.
+            _isAutoBackupPending.value = true
+        }
+    }
+
+    suspend fun retryAutoBackup() = withContext(ioDispatcher) {
+        learnedKanjiMutex.withLock {
+            ensureProgressReadyLocked()
+            syncLearnedKanjisToAutoBackupLocked()
+        }
     }
 
     private suspend fun buildLearnedKanjisJson(): String {
@@ -210,12 +255,10 @@ class KanjiRepository @Inject constructor(
             .map { it.kanji }
             .sorted()
 
-        return prettyGson.toJson(
-            LearnedKanjiExport(
-                version = EXPORT_SCHEMA_VERSION,
-                learnedKanji = learnedKanjis
-            )
-        )
+        return prettyGson.toJson(JsonObject().apply {
+            addProperty("version", EXPORT_SCHEMA_VERSION)
+            add("learnedKanji", JsonArray().apply { learnedKanjis.forEach { add(it) } })
+        })
     }
 
     private fun normalizeLearnedKanjis(kanjis: List<String>): List<String> {
@@ -231,20 +274,29 @@ class KanjiRepository @Inject constructor(
         val root = runCatching { JsonParser.parseString(json) }
             .getOrElse { throw IllegalArgumentException("Invalid JSON file.") }
 
-        return when {
-            root.isJsonArray -> gson.fromJson(root, Array<String>::class.java).toList()
+        val array = when {
+            root.isJsonArray -> root.asJsonArray
             root.isJsonObject -> {
                 val jsonObject = root.asJsonObject
-                val kanjiElement = jsonObject.get("learnedKanji") ?: jsonObject.get("learnedKanjis")
+                val kanjiElement = jsonObject.get("learnedKanji")
+                    ?: jsonObject.get("learnedKanjis")
+                    ?: jsonObject.get("a")
                 if (kanjiElement == null || !kanjiElement.isJsonArray) {
                     throw IllegalArgumentException("The JSON file must include a learnedKanji array.")
                 }
-                gson.fromJson(kanjiElement, Array<String>::class.java).toList()
+                kanjiElement.asJsonArray
             }
 
             else -> throw IllegalArgumentException("The JSON file must include a learnedKanji array.")
         }
+        require(array.all { it.isJsonPrimitive && it.asJsonPrimitive.isString }) {
+            "The learnedKanji array must contain only strings."
+        }
+        return array.map { it.asString }
     }
+
+    fun observeKanjis(): Flow<List<Kanji>> =
+        kanjiDao.observeKanjis().map { kanjis -> kanjis.map { it.toDomain() } }
 
     fun getLearnedKanjis(): Flow<List<Kanji>> =
         kanjiDao.getLearnedKanjis().map { kanjis -> kanjis.map { it.toDomain() } }
@@ -271,7 +323,7 @@ class KanjiRepository @Inject constructor(
             }
 
             if (attempt < MAX_RETRIES - 1) {
-                delay(RETRY_DELAY_MS * (attempt + 1))
+                delay((RETRY_DELAY_MS * (attempt + 1)).milliseconds)
             }
         }
 
@@ -288,9 +340,4 @@ data class LearnedKanjiImportResult(
 private class KanjiDownloadException(
     kanji: String,
     cause: Throwable?
-) : Exception("Unable to download data for kanji $kanji.", cause)
-
-private data class LearnedKanjiExport(
-    val version: Int,
-    val learnedKanji: List<String>
-)
+) : IOException("Unable to download data for kanji $kanji.", cause)
