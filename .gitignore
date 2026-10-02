@@ -1,15 +1,62 @@
+# Gradle e Kotlin: caches e arquivos gerados
+.gradle/
+.kotlin/
+build/
+out/
+
+# Configuração local do SDK Android
+local.properties
+
+# Android Studio / IntelliJ: configurações locais e temporárias
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
+/.idea/caches/
+/.idea/libraries/
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/markdown.xml
+/.idea/shelf/
+/.idea/httpRequests/
+/.idea/deploymentTargetSelector.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/deviceManager.xml
+/.idea/appInsightsSettings.xml
+
+# Compilação nativa
+.externalNativeBuild/
+.cxx/
+
+# Pacotes e saídas de publicação gerados pelo Android Studio
+*.apk
+*.aab
+*.ap_
+/app/release/
+/captures/
+
+# Chaves e configurações privadas de assinatura
+*.jks
+*.keystore
+keystore.properties
+key.properties
+signing.properties
+*.p12
+*.pfx
+
+# Variáveis de ambiente locais
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Arquivos temporários do sistema operacional
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+Thumbs.db
+Desktop.ini
+
+# Diagnósticos e arquivos temporários
+*.hprof
+*.log
+*.tmp
+*.swp
+*~

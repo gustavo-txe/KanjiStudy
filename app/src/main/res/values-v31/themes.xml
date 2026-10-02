@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Splash Theme (API 31+) keeping native visual quality -->
+    <style name="Theme.KanjiStudy.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="postSplashScreenTheme">@style/Theme.KanjiStudy</item>
+    </style>
+
+</resources>

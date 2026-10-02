@@ -26,13 +26,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
-# Keep model fields used by Gson deserialization.
--keepclassmembers class com.app.kanjistudy.data.model.** {
-    <fields>;
-}
+# Kanji API responses are deserialized by Gson through reflection. These classes are
+# in data.remote (not data.model), so they must keep their JSON field names in release.
+-keep class com.app.kanjistudy.data.remote.KanjiDto { *; }
 
-# Keep classes in the model package to avoid reflective mapping breakage in minified builds.
--keep class com.app.kanjistudy.data.model.** { *; }
+# Retrofit reads this interface's HTTP annotations at runtime.
+-keep interface com.app.kanjistudy.data.remote.KanjiApiService { *; }
 
 # Keep Room database, DAO and type converters metadata/classes.
 -keep class com.app.kanjistudy.data.local.AppDatabase { *; }
